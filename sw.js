@@ -2,7 +2,7 @@
    - Eigene Dateien: erst Netz (max. 4 s), sonst gespeicherte Version → Updates kommen sofort an
    - Schriften: aus dem Speicher
    - Home Assistant (WebSocket, Kamerabilder) wird NIE gespeichert, das läuft direkt am Service Worker vorbei */
-const P="zuhause-",V=P+"v1";
+const P="zuhause-",V=P+"v2";
 const CORE=['./','index.html','app.js','shared/ios-nav.js','manifest.json','icon.svg','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','icons/favicon-32.png'];
 const EXTRA=["https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"];
 const CDN=/fonts\.googleapis\.com|fonts\.gstatic\.com/;

@@ -564,7 +564,7 @@
     $('haVersion').textContent = haVersion ? 'HA ' + haVersion : '';
     $('haVersion').className = 'pill ok';
     // Pi-Werte über die Integration „System Monitor“
-    var find = function (re) { var k = Object.keys(m.sys).filter(function (id) { return re.test(id) && !unavailable(m.sys[id]); })[0]; return k ? m.sys[k] : null; };
+    var find = function (re) { var k = Object.keys(m.sys).filter(function (id) { return re.test(reg(id).key + ' ' + id) && !unavailable(m.sys[id]); })[0]; return k ? m.sys[k] : null; };
     var meters = [
       ['CPU-Temperatur', find(/processor_temperature|prozessortemperatur/), '°C', 85, ''],
       ['CPU-Last', find(/processor_use|prozessornutzung|prozessorauslastung/), '%', 100, ''],
