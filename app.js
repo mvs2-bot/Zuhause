@@ -568,14 +568,15 @@
     var meters = [
       ['CPU-Temperatur', find(/processor_temperature|prozessortemperatur/), '°C', 85, ''],
       ['CPU-Last', find(/processor_use|prozessornutzung|prozessorauslastung/), '%', 100, ''],
-      ['Arbeitsspeicher', find(/memory_use_percent|memory_usage|arbeitsspeicher.*(prozent|nutzung)/), '%', 100, 'cool'],
-      ['SSD belegt', find(/disk_use_percent|disk_usage|datentrager.*(prozent|nutzung)/), '%', 100, 'cool']
+      ['Arbeitsspeicher', find(/memory_use_percent|memory_usage|arbeitsspeicher.*(prozent|nutzung)|arbeitsspeicherauslastung/), '%', 100, 'cool'],
+      ['SSD belegt', find(/disk_use_percent|disk_usage|datentrager.*(prozent|nutzung)|massenspeicher_auslastung/), '%', 100, 'cool']
     ].filter(function (x) { return x[1]; });
     $('pi').innerHTML = meters.map(function (x) {
       var v = num(x[1]);
       return '<div class="meter"><span>' + x[0] + '</span><b>' + (v == null ? '–' : (x[2] === '°C' ? Math.round(v) : Math.round(v)) + ' ' + x[2]) + '</b><div class="bar ' + x[4] + '"><div style="width:' + Math.min(100, (v || 0) / x[3] * 100) + '%"></div></div></div>';
     }).join('');
-    var boot = find(/last_boot|letzter_start/);
+    var boot = find(/last_boot|letzter_start|uptime|betriebszeit/);
+    if (boot && isNaN(new Date(boot.state))) boot = null;
     $('piHint').textContent = meters.length
       ? (boot ? 'Läuft seit ' + ago(boot.state) + ' · ' : '') + 'Home Assistant OS auf USB-SSD · LAN an der Fritzbox'
       : 'Für CPU, Speicher und SSD in HA die Integration „System Monitor“ hinzufügen (Einstellungen → Geräte & Dienste → Integration hinzufügen).';
