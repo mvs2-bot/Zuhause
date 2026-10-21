@@ -1,0 +1,17 @@
+{
+  "id": "zuhause-app",
+  "name": "Zuhause",
+  "short_name": "Zuhause",
+  "description": "Dein Smart Home auf einen Blick: Licht, Klima, Türen und Kameras aus Home Assistant",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f6f2",
+  "theme_color": "#b45309",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
