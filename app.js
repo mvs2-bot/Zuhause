@@ -575,6 +575,8 @@
       var v = num(x[1]);
       return '<div class="meter"><span>' + x[0] + '</span><b>' + (v == null ? '–' : (x[2] === '°C' ? Math.round(v) : Math.round(v)) + ' ' + x[2]) + '</b><div class="bar ' + x[4] + '"><div style="width:' + Math.min(100, (v || 0) / x[3] * 100) + '%"></div></div></div>';
     }).join('');
+    var short = { 'CPU-Temperatur': 'Pi ', 'CPU-Last': 'CPU ', 'Arbeitsspeicher': 'RAM ', 'SSD belegt': 'SSD ' };
+    $('piLine').textContent = meters.length ? meters.map(function (x) { var v = num(x[1]); return short[x[0]] + (v == null ? '–' : Math.round(v) + (x[2] === '°C' ? ' °C' : ' %')); }).join(' · ') + ' ›' : 'Raspberry Pi 4 · System-Infos ›';
     var boot = find(/last_boot|letzter_start|uptime|betriebszeit/);
     if (boot && isNaN(new Date(boot.state))) boot = null;
     $('piHint').textContent = meters.length
@@ -585,6 +587,7 @@
     var list = entries.filter(function (e) { return e.source !== 'ignore' && !e.disabled_by && !SVC_HIDE[e.domain]; })
       .sort(function (a, b) { return (a.state === 'loaded') - (b.state === 'loaded') || a.title.localeCompare(b.title, 'de'); });
     var bad = list.filter(function (e) { return e.state !== 'loaded'; }).length;
+    $('sysBadge').hidden = !bad;
     $('svcCount').textContent = list.length ? (bad ? bad + ' mit Problem' : 'alles ok') : '';
     $('services').innerHTML = list.map(function (e) {
       var ok = e.state === 'loaded';
@@ -728,20 +731,26 @@
   });
 
   // ---------- Ansichten ----------
-  var views = ['uebersicht', 'raeume', 'kameras', 'system'], current = 'uebersicht';
+  var views = ['uebersicht', 'raeume', 'kameras', 'system'], current = 'uebersicht', lastView = 'uebersicht';
   function show(v) {
     if (views.indexOf(v) < 0) v = 'uebersicht';
     current = v;
     var needsConn = setupNeeded && v !== 'system';
     $('welcome').hidden = !needsConn;
     views.forEach(function (x) { $('view-' + x).hidden = x !== v || needsConn; });
+    if (v !== 'system') lastView = v;
     document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.view === v); });
+    $('sysBtn').setAttribute('aria-pressed', v === 'system');
     try { history.replaceState(null, '', '#' + v); } catch (e) {}
   }
   document.querySelector('.tabs').addEventListener('click', function (e) {
     var t = e.target.closest('.tab'); if (!t) return;
     show(t.dataset.view); window.scrollTo(0, 0);
   });
+  // System-Infos: dezent über ⚙️ oben und die Pi-Zeile unten
+  $('sysBtn').addEventListener('click', function () { show(current === 'system' ? lastView : 'system'); window.scrollTo(0, 0); });
+  $('piLine').addEventListener('click', function () { show('system'); window.scrollTo(0, 0); });
+  $('sysBack').addEventListener('click', function () { show(lastView); window.scrollTo(0, 0); });
 
   (function tick() {
     var d = new Date();

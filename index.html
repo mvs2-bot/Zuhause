@@ -233,7 +233,14 @@
   /* Tab-Leiste */
   nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--card); border-top: 1px solid var(--line);
     padding: 6px max(16px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
-  .tabs-in { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .tabs-in { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .hbtns { display: flex; gap: 8px; }
+  .icon-btn { position: relative; }
+  .icon-btn[aria-pressed="true"] { border-color: var(--p1); background: var(--p1-soft); }
+  .icon-btn .badge { position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--danger); border: 2px solid var(--bg); }
+  .foot { display: block; margin: 0 auto; color: var(--mute); font-weight: 600; font-size: .78rem; font-variant-numeric: tabular-nums; }
+  .foot:hover { color: var(--p1); }
+  .back { align-self: flex-start; }
   .tab { background: none; border: 0; border-radius: 12px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .74rem; font-weight: 700; color: var(--mute); }
   .tab i { font-style: normal; font-size: 1.25rem; line-height: 1.1; }
   .tab[aria-selected="true"] { color: var(--p1); background: var(--p1-soft); }
@@ -254,7 +261,10 @@
       <h1>🏡 Zuhause</h1>
       <div class="sub"><span id="clock"></span><span class="conn" id="conn">nicht verbunden</span></div>
     </div>
-    <button class="icon-btn" id="themeBtn" type="button" aria-label="Hell/Dunkel umschalten">🌓</button>
+    <div class="hbtns">
+      <button class="icon-btn" id="sysBtn" type="button" aria-label="System-Infos" aria-pressed="false" title="System-Infos">⚙️<span class="badge" id="sysBadge" hidden></span></button>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Hell/Dunkel umschalten">🌓</button>
+    </div>
   </header>
 
   <!-- Erster Start: Verbindung einrichten -->
@@ -320,6 +330,7 @@
 
   <!-- System -->
   <section id="view-system" class="view" hidden>
+    <button class="link-btn back" type="button" id="sysBack">← Zurück</button>
     <section class="box">
       <div class="box-head"><h2>Raspberry Pi 4</h2><span class="pill" id="haVersion"></span></div>
       <div class="kv" id="pi"></div>
@@ -344,7 +355,7 @@
     </section>
   </section>
 
-  <footer>Raspberry Pi 4 · Home Assistant · Zigbee · Hue · Blink</footer>
+  <footer><button class="link-btn foot" type="button" id="piLine">Raspberry Pi 4 · System-Infos</button></footer>
 </div>
 
 <template id="connTpl">
@@ -365,7 +376,6 @@
     <button class="tab" type="button" role="tab" data-view="uebersicht" aria-selected="true"><i>🏠</i>Übersicht</button>
     <button class="tab" type="button" role="tab" data-view="raeume" aria-selected="false"><i>🚪</i>Räume</button>
     <button class="tab" type="button" role="tab" data-view="kameras" aria-selected="false"><i>📷</i>Kameras</button>
-    <button class="tab" type="button" role="tab" data-view="system" aria-selected="false"><i>⚙️</i>System</button>
   </div>
 </nav>
 
