@@ -87,8 +87,26 @@
     });
   }
   function subscribe(eventType, cb) {
-    return send({ type: 'subscribe_events', event_type: eventType }).then(function () { subs[msgId] = cb; });
+    // Callback vor dem Senden unter der eigenen ID ablegen: Events können direkt nach der Anmeldung kommen,
+    // und mehrere Abos laufen gleichzeitig, msgId ist beim Antworten also schon weitergezählt
+    subs[msgId + 1] = cb;
+    return send({ type: 'subscribe_events', event_type: eventType });
   }
+
+  // Herzschlag: Handys legen WebSockets im Hintergrund oft still schlafen, ohne sie zu schließen.
+  // Kommt auf ein Ping keine Antwort, wird neu verbunden; nach dem Aufwachen wird der Stand neu geladen.
+  function ping() {
+    if (!ws || !ws.authed) return Promise.resolve(false);
+    var sock = ws;
+    return Promise.race([send({ type: 'ping' }), new Promise(function (_, j) { setTimeout(j, 5000); })])
+      .then(function () { return true; }, function () {
+        if (ws !== sock) return false;
+        ws = null; try { sock.close(); } catch (e) {}
+        setConn('bad', 'offline'); retry = 0; connect();
+        return false;
+      });
+  }
+  setInterval(function () { if (document.visibilityState === 'visible') ping(); }, 30000);
   function callService(domain, service, data, target) {
     return send({ type: 'call_service', domain: domain, service: service, service_data: data || {}, target: target })
       .catch(function (e) { toast('Hat nicht geklappt: ' + (e.message || e)); throw e; });
@@ -112,6 +130,7 @@
         sock.authFailed = true; formError(lastError); setConn('bad', 'Token ungültig'); showWelcome(true); sock.close(); return;
       }
       if (m.type === 'auth_ok') { sock.authed = true; retry = 0; formError(''); onConnected(m.ha_version); return; }
+      if (m.type === 'pong' && pending[m.id]) { pending[m.id].resolve(); delete pending[m.id]; return; }
       if (m.type === 'result' && pending[m.id]) {
         var p = pending[m.id]; delete pending[m.id];
         if (m.success) p.resolve(m.result); else p.reject(new Error((m.error && m.error.message) || 'Fehler'));
@@ -136,7 +155,9 @@
 
   // Beim Zurückholen der App sofort neu verbinden statt auf den Timer zu warten
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible' && (!ws || ws.readyState > 1) && lsGet(LS_CONN)) { retry = 0; connect(); }
+    if (document.visibilityState !== 'visible' || !lsGet(LS_CONN)) return;
+    if (!ws || ws.readyState > 1) { retry = 0; connect(); return; }
+    ping().then(function (alive) { if (alive) refreshStates(); });
   });
   window.addEventListener('online', function () { if (!ws || ws.readyState > 1) { retry = 0; connect(); } });
 
@@ -157,6 +178,13 @@
       });
       loadHistory();
     }).catch(function (e) { toast('Laden fehlgeschlagen: ' + e.message); });
+  }
+
+  function refreshStates() {
+    return send({ type: 'get_states' }).then(function (list) {
+      S = {}; list.forEach(function (s) { S[s.entity_id] = s; });
+      queueRender();
+    }).catch(function () {});
   }
 
   function loadAll() {
