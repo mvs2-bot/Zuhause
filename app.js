@@ -7,7 +7,7 @@
 
   var DEFAULT_URL = 'https://homeassistant.taildd4a66.ts.net';
   var LS_CONN = 'zuhause-ha', LS_FAV = 'zuhause-fav-scenes', LS_SCENES = 'zuhause-scenes', LS_ROOMS = 'zuhause-room-order',
-    LS_ROOM = 'zuhause-room', LS_NOTES = 'zuhause-notes-open', LS_RANGE = 'zuhause-range-';
+    LS_ROOM = 'zuhause-room', LS_NOTES = 'zuhause-notes-open', LS_RANGE = 'zuhause-range-', LS_FOLD = 'zuhause-fold', LS_SPEAKER = 'zuhause-speaker';
 
   // Reihenfolge und Symbole der Räume (HA-Bereichsnamen); unbekannte Bereiche kommen alphabetisch dahinter
   var ROOM_ORDER = ['wohnzimmer', 'küche', 'schlafzimmer', 'büro', 'badezimmer', 'flur', 'toilette', 'keller'];
@@ -18,6 +18,7 @@
   var WEATHER = { 'clear-night': ['🌙', 'Klar'], cloudy: ['☁️', 'Bewölkt'], fog: ['🌫️', 'Nebel'], hail: ['🌨️', 'Hagel'], lightning: ['🌩️', 'Gewitter'],
     'lightning-rainy': ['⛈️', 'Gewitter mit Regen'], partlycloudy: ['⛅', 'Teils bewölkt'], pouring: ['🌧️', 'Starkregen'], rainy: ['🌦️', 'Regen'],
     snowy: ['❄️', 'Schnee'], 'snowy-rainy': ['🌨️', 'Schneeregen'], sunny: ['☀️', 'Sonnig'], windy: ['💨', 'Windig'], 'windy-variant': ['💨', 'Windig, bewölkt'], exceptional: ['⚠️', 'Unwetter'] };
+  var VAC = { cleaning: 'Saugt', docked: 'In der Station', returning: 'Fährt zur Station', paused: 'Pausiert', idle: 'Bereit', error: 'Fehler' };
   var HVAC = { off: 'Aus', heat: 'Heizen', auto: 'Auto', heat_cool: 'Auto', cool: 'Kühlen', dry: 'Trocknen', fan_only: 'Lüfter' };
   // Zeiträume für Verläufe: Langzeitstatistik von HA (5-Minuten-, Stunden-, Tageswerte)
   var RANGES = { '24h': { label: '24 h', ms: 864e5, period: '5minute' }, '7d': { label: '7 Tage', ms: 7 * 864e5, period: 'hour' }, '30d': { label: '30 Tage', ms: 30 * 864e5, period: 'day' } };
@@ -284,7 +285,7 @@
       var a = areas[id];
       roomMap[id] = { id: id, name: a.name, icon: ROOM_ICON[a.name.toLowerCase()] || '🚪', lights: [], temps: [], hums: [], contacts: [], motions: [], cams: [], scenes: [], echos: [], climates: [], buttons: {} };
     });
-    var m = { rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], heatTpl: [], weather: null, fritz: [], automations: 0, batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
+    var m = { rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], heatTpl: [], vacuums: [], spotify: null, weather: null, fritz: [], automations: 0, batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
 
     Object.keys(S).forEach(function (id) {
       var s = S[id], dom = id.split('.')[0], e = reg(id), r = roomMap[areaOf(id)] || null;
@@ -305,11 +306,14 @@
       else if (dom === 'sensor' && dc(s) === 'humidity') { if (r) r.hums.push(s); }
       else if (dom === 'binary_sensor' && /^(door|window|garage_door|opening)$/.test(dc(s))) { var c = { s: s, room: r }; m.contacts.push(c); if (r) r.contacts.push(c); }
       else if (dom === 'binary_sensor' && /^(motion|occupancy|presence)$/.test(dc(s)) && e.platform !== 'blink') { if (r) r.motions.push(s); }
+      else if (dom === 'vacuum') m.vacuums.push(s);
+      else if (dom === 'camera' && /dreame|xiaomi_miio|roborock/.test(e.platform)) { m.vacMaps = m.vacMaps || {}; m.vacMaps[e.device] = s; }
+      else if (dom === 'media_player' && e.platform === 'spotify') m.spotify = s;
       else if (dom === 'camera') { var cam = { s: s, room: r }; m.cams.push(cam); if (r) r.cams.push(cam); }
       else if (dom === 'alarm_control_panel') m.alarms.push(s);
       else if (dom === 'climate') { var cl = { s: s, room: r }; m.climates.push(cl); if (r) r.climates.push(cl); }
       else if (dom === 'scene') { var sc = { s: s, room: r }; m.scenes.push(sc); if (r) r.scenes.push(sc); }
-      else if (dom === 'media_player' && e.platform === 'alexa_media') { var ec = { s: s, room: r }; m.echos.push(ec); if (r) r.echos.push(ec); }
+      else if (dom === 'media_player' && e.platform === 'alexa_media' && !/fire\s*tv/i.test(name(s))) { var ec = { s: s, room: r }; m.echos.push(ec); if (r) r.echos.push(ec); }
       else if (dom === 'event' && e.device && r) {
         // Taster (Hue Dimmer usw.): letzter Druck = jüngstes Event des Geräts
         var b = r.buttons[e.device];
@@ -349,6 +353,7 @@
     if (connState !== 'ok' && !Object.keys(S).length) return;
     var m = model();
     renderOverview(m); renderRooms(m); renderCams(m); renderSystem(m);
+    if (current === 'detail') renderDetail(m);
   }
 
   function lightInfo(s) {
@@ -460,9 +465,6 @@
       : '<div class="empty">Nichts zu tun.</div>';
     var warnCount = notes.filter(function (n) { return n.cls !== 'info'; }).length;
     $('noteCount').textContent = warnCount ? warnCount + ' offen' : notes.length ? notes.length + ' Infos' : 'nichts zu tun';
-    var openNotes = lsGet(LS_NOTES) !== false;
-    $('notesHead').setAttribute('aria-expanded', openNotes);
-    $('notes').hidden = !openNotes;
 
     // Szenen: eigene Auswahl und Reihenfolge dieses Geräts, „Alles aus“ hervorgehoben
     $('scenes').innerHTML = favScenes().map(function (id) {
@@ -482,14 +484,153 @@
       $('heatCount').textContent = heating ? heating + ' heizt' : '';
     }
 
-    // Durchsage (erscheint, sobald Alexa Media Player eingerichtet ist)
-    $('sayBox').hidden = !m.echos.length;
-    if (m.echos.length) {
-      var t = $('targets'), cur = t.dataset.sel || 'alle';
-      t.innerHTML = [{ id: 'alle', n: 'Alle Echos' }].concat(m.echos.map(function (e) { return { id: e.s.entity_id, n: e.room ? e.room.name : name(e.s) }; }))
-        .map(function (x) { return '<button class="chip" type="button" data-t="' + esc(x.id) + '" aria-pressed="' + (x.id === cur) + '">' + esc(x.n) + '</button>'; }).join('');
+    // Durchsage: Auswahlmenü statt Knopfreihe
+    var echos = m.echos.filter(function (e) { return !unavailable(e.s); });
+    $('sayBox').hidden = !echos.length;
+    if (echos.length) {
+      var sel = $('sayTarget'), cur = sel.value || 'alle';
+      var single = echos.filter(function (e) { return e.room && !isGroup(e.s); }), groups = echos.filter(function (e) { return isGroup(e.s) || !e.room; });
+      sel.innerHTML = '<option value="alle">Alle Echos</option>'
+        + (single.length ? '<optgroup label="Räume">' + single.map(function (e) { return '<option value="' + esc(e.s.entity_id) + '">' + esc(e.room.name) + '</option>'; }).join('') + '</optgroup>' : '')
+        + (groups.length ? '<optgroup label="Gruppen">' + groups.map(function (e) { return '<option value="' + esc(e.s.entity_id) + '">' + esc(name(e.s)) + '</option>'; }).join('') + '</optgroup>' : '');
+      sel.value = cur; if (!sel.value) sel.value = 'alle';
     }
+    renderMusic(m, echos);
+    renderVacuum(m);
   }
+  function isGroup(s) { return /^x\d|gruppe|überall|ueberall|\+/i.test(name(s)) || (s.attributes && s.attributes.member_ids); }
+
+  // ---------- Musik über die Echos (Alexa Media Player), optional Spotify-Integration ----------
+  function speaker(echos) {
+    var id = lsGet(LS_SPEAKER);
+    var playing = echos.filter(function (e) { return e.s.state === 'playing'; })[0];
+    return echos.filter(function (e) { return e.s.entity_id === id; })[0] || playing || echos[0];
+  }
+  function renderMusic(m, echos) {
+    $('musicBox').hidden = !echos.length && !m.spotify;
+    if (!echos.length && !m.spotify) return;
+    var sp = speaker(echos), a = sp ? sp.s.attributes : {}, conf = lsGet(LS_CONN) || {}, base = (conf.url || '').replace(/\/+$/, '');
+    var playingNow = echos.filter(function (e) { return e.s.state === 'playing'; });
+    $('musicCount').textContent = playingNow.length ? '▶ ' + playingNow.length + ' spielt' : '';
+    var opts = echos.map(function (e) { return '<option value="' + esc(e.s.entity_id) + '"' + (sp && e.s.entity_id === sp.s.entity_id ? ' selected' : '') + '>' + (e.s.state === 'playing' ? '▶ ' : '') + esc(e.room && !isGroup(e.s) ? e.room.name : name(e.s)) + '</option>'; }).join('');
+    var html = '';
+    if (sp) {
+      var on = sp.s.state === 'playing';
+      html += '<div class="np">' + (a.entity_picture ? '<img alt="" src="' + esc((/^https?:/.test(a.entity_picture) ? '' : base) + a.entity_picture) + '">' : '<img alt="" src="icon.svg">')
+        + '<div class="txt"><b>' + esc(a.media_title || (on ? 'Spielt' : 'Nichts läuft')) + '</b><small>' + esc([a.media_artist, a.source].filter(Boolean).join(' · ') || 'Lautsprecher wählen und Musik starten') + '</small></div></div>'
+        + '<div class="ctl"><select data-speaker aria-label="Lautsprecher">' + opts + '</select>'
+        + '<button class="icon-btn" type="button" data-mp="media_previous_track" aria-label="Zurück">⏮</button>'
+        + '<button class="icon-btn" type="button" data-mp="' + (on ? 'media_pause' : 'media_play') + '" aria-label="' + (on ? 'Pause' : 'Abspielen') + '">' + (on ? '⏸' : '▶️') + '</button>'
+        + '<button class="icon-btn" type="button" data-mp="media_next_track" aria-label="Weiter">⏭</button></div>'
+        + '<div class="slider"><label for="mpVol"><span>Lautstärke</span><span>' + (a.volume_level != null ? Math.round(a.volume_level * 100) + ' %' : '') + '</span></label><input type="range" id="mpVol" min="0" max="100" step="5" value="' + Math.round((a.volume_level || 0) * 100) + '"></div>'
+        + '<form class="say" data-spotify><input type="text" placeholder="Spotify: Playlist, Künstler oder Song" aria-label="Was soll Spotify spielen?"><button class="btn" type="submit" aria-label="Auf Spotify abspielen">▶</button></form>';
+    }
+    if (m.spotify && (m.spotify.attributes.source_list || []).length) {
+      var sa = m.spotify.attributes;
+      html += '<div class="ctl"><span class="noclim" style="white-space:nowrap">Spotify spielt auf</span><select data-spsource aria-label="Spotify-Gerät">'
+        + sa.source_list.map(function (x) { return '<option' + (x === sa.source ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></div>';
+    }
+    if (playingNow.length > 1 || (playingNow.length === 1 && sp && playingNow[0] !== sp)) html += '<div class="playing">' + playingNow.map(function (e) {
+      return '<div class="noclim">▶ ' + esc(e.room && !isGroup(e.s) ? e.room.name : name(e.s)) + ': ' + esc(e.s.attributes.media_title || 'spielt') + '</div>'; }).join('') + '</div>';
+    var box = $('music'), focus = document.activeElement && box.contains(document.activeElement);
+    if (!focus) box.innerHTML = html; // nicht neu zeichnen, während getippt oder geschoben wird
+  }
+  document.addEventListener('change', function (e) {
+    if (e.target.matches('[data-speaker]')) { lsSet(LS_SPEAKER, e.target.value); e.target.blur(); queueRender(); }
+    if (e.target.matches('[data-spsource]')) { var sp = model().spotify; callService('media_player', 'select_source', { source: e.target.value }, { entity_id: sp.entity_id }).catch(function () {}); e.target.blur(); }
+    if (e.target.id === 'mpVol') { var s = speaker(model().echos); callService('media_player', 'volume_set', { volume_level: e.target.value / 100 }, { entity_id: s.s.entity_id }).catch(function () {}); e.target.blur(); }
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-mp]'); if (!b) return;
+    var s = speaker(model().echos); if (!s) return;
+    callService('media_player', b.dataset.mp, {}, { entity_id: s.s.entity_id }).catch(function () {});
+  });
+  document.addEventListener('submit', function (e) {
+    if (!e.target.matches('[data-spotify]')) return;
+    e.preventDefault();
+    var inp = e.target.querySelector('input'), q = inp.value.trim(), s = speaker(model().echos);
+    if (!q || !s) return;
+    // Alexa sucht selbst bei Spotify, wie „Alexa, spiele … auf Spotify“
+    callService('media_player', 'play_media', { media_content_id: q, media_content_type: 'SPOTIFY' }, { entity_id: s.s.entity_id })
+      .then(function () { toast('Spotify startet auf ' + (s.room && !isGroup(s.s) ? s.room.name : name(s.s)) + ' …'); inp.value = ''; inp.blur(); }).catch(function () {});
+  });
+
+  // ---------- Saugroboter ----------
+  function renderVacuum(m) {
+    $('vacBox').hidden = !m.vacuums.length;
+    if (!m.vacuums.length) return;
+    var conf = lsGet(LS_CONN) || {}, base = (conf.url || '').replace(/\/+$/, '');
+    $('vacCount').textContent = m.vacuums.length > 1 ? m.vacuums.length + ' Geräte' : '';
+    var html = m.vacuums.map(function (v) {
+      var a = v.attributes || {}, dev = reg(v.entity_id).device, st = v.state;
+      var batt = a.battery_level != null ? a.battery_level : num(m.batteries[dev]);
+      var busy = st === 'cleaning' || st === 'returning';
+      var info = [VAC[st] || st];
+      if (batt != null) info.push('🔋 ' + Math.round(batt) + ' %');
+      if (a.fan_speed) info.push('Saugstufe ' + a.fan_speed);
+      if (a.cleaned_area != null && busy) info.push(a.cleaned_area + ' m²');
+      if (a.error && a.error !== 'no_error' && st === 'error') info.push(a.error);
+      var h = '<div class="vac-top"><span class="ico" aria-hidden="true">🤖</span><div class="txt"><b>' + esc(name(v)) + '</b><small>' + esc(info.join(' · ')) + '</small></div>'
+        + '<span class="pill ' + (st === 'error' ? 'open' : busy ? 'warn' : 'ok') + '">' + esc(VAC[st] || st) + '</span></div>';
+      h += '<div class="btnrow">'
+        + (st === 'cleaning' ? '<button class="btn" type="button" data-vac="pause" data-id="' + esc(v.entity_id) + '">⏸ Pause</button>' : '<button class="btn" type="button" data-vac="start" data-id="' + esc(v.entity_id) + '">▶ ' + (st === 'paused' ? 'Weiter' : 'Saugen') + '</button>')
+        + '<button class="btn ghost" type="button" data-vac="return_to_base" data-id="' + esc(v.entity_id) + '">🏠 Zur Station</button>'
+        + '<button class="btn ghost" type="button" data-vac="locate" data-id="' + esc(v.entity_id) + '">📍 Finden</button></div>';
+      if ((a.fan_speed_list || []).length) h += '<div class="ctl"><span class="noclim">Saugstufe</span><select data-fan="' + esc(v.entity_id) + '">' + a.fan_speed_list.map(function (f) { return '<option' + (f === a.fan_speed ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') + '</select></div>';
+      // Raumreinigung (Dreame/Xiaomi: Attribut „rooms“ mit Segment-IDs)
+      var segs = vacRooms(a);
+      if (segs.length) h += '<div class="fsec' + (isFolded('vac-rooms') ? ' folded' : '') + '" data-fold-sec="vac-rooms"><h3 class="fh">Raum saugen<span class="chev">▾</span></h3><div class="scenes room">'
+        + segs.map(function (r) { return '<button class="scene" type="button" data-seg="' + esc(r.id) + '" data-id="' + esc(v.entity_id) + '"><i>🧹</i>' + esc(r.name) + '</button>'; }).join('') + '</div></div>';
+      var map = m.vacMaps && m.vacMaps[dev];
+      if (map && map.attributes.entity_picture) h += '<div class="fsec' + (isFolded('vac-map') ? ' folded' : '') + '" data-fold-sec="vac-map"><h3 class="fh">Karte<span class="chev">▾</span></h3><div class="vac-map"><img alt="Karte" loading="lazy" src="' + esc(base + map.attributes.entity_picture) + '"></div></div>';
+      return h;
+    }).join('<hr style="border:0;border-top:1px solid var(--line);margin:14px 0">');
+    var box = $('vac');
+    if (!(document.activeElement && box.contains(document.activeElement) && document.activeElement.tagName === 'SELECT')) box.innerHTML = html;
+  }
+  function vacRooms(a) {
+    var r = a.rooms, out = [];
+    if (!r) return out;
+    var list = Array.isArray(r) ? r : Object.keys(r).map(function (k) { return r[k]; }).reduce(function (acc, x) { return acc.concat(Array.isArray(x) ? x : [x]); }, []);
+    list.forEach(function (x) { if (x && x.id != null && x.name) out.push({ id: x.id, name: x.name }); });
+    return out;
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-vac]');
+    if (b) { callService('vacuum', b.dataset.vac, {}, { entity_id: b.dataset.id }).then(function () { toast(b.dataset.vac === 'locate' ? 'Der Sauger meldet sich …' : 'Gesendet.'); }).catch(function () {}); return; }
+    var sg = e.target.closest('[data-seg]');
+    if (sg) {
+      var p = reg(sg.dataset.id).platform || 'dreame_vacuum';
+      callService(p, 'vacuum_clean_segment', { segments: [isNaN(+sg.dataset.seg) ? sg.dataset.seg : +sg.dataset.seg] }, { entity_id: sg.dataset.id })
+        .then(function () { toast('Saugt jetzt: ' + sg.textContent.replace('🧹', '').trim()); }).catch(function () {});
+    }
+  });
+  document.addEventListener('change', function (e) {
+    if (!e.target.matches('[data-fan]')) return;
+    callService('vacuum', 'set_fan_speed', { fan_speed: e.target.value }, { entity_id: e.target.dataset.fan }).catch(function () {});
+    e.target.blur();
+  });
+
+  // ---------- Einklappen: jeder Kasten (data-fold) und Unterbereiche (data-fold-sec) ----------
+  function isFolded(k) { var f = lsGet(LS_FOLD) || {}; return !!f[k]; }
+  function setFolded(k, v) { var f = lsGet(LS_FOLD) || {}; if (v) f[k] = 1; else delete f[k]; lsSet(LS_FOLD, f); }
+  document.querySelectorAll('[data-fold]').forEach(function (box) {
+    var head = box.querySelector('.box-head'); if (!head) return;
+    head.insertAdjacentHTML('beforeend', '<span class="chev" aria-hidden="true">▾</span>');
+    head.setAttribute('role', 'button'); head.tabIndex = 0;
+    box.classList.toggle('folded', isFolded(box.dataset.fold));
+    head.setAttribute('aria-expanded', !isFolded(box.dataset.fold));
+  });
+  function toggleFold(e) {
+    if (e.target.closest('button:not(.box-head), a, select, input')) return;
+    var head = e.target.closest('[data-fold] > .box-head, [data-fold-sec] > .fh'); if (!head) return;
+    if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.type === 'keydown') e.preventDefault();
+    var box = head.parentNode, k = box.dataset.fold || box.dataset.foldSec, v = !box.classList.contains('folded');
+    box.classList.toggle('folded', v); setFolded(k, v); head.setAttribute('aria-expanded', !v);
+  }
+  document.addEventListener('click', toggleFold);
+  document.addEventListener('keydown', toggleFold);
 
   function sceneIcon(n) {
     n = n.toLowerCase();
@@ -562,7 +703,7 @@
       html += '<div class="clim ' + k + '"><div>' + (t != null ? '<div class="t">' + fmt1(t) + '<small> °C</small></div>' : '')
         + (h != null ? '<div class="h">💧 ' + Math.round(h) + ' %' + (h >= 65 ? ' · Lüften' : '') + '</div>' : '') + '</div><div></div></div>';
       var ids = [r.temp, r.hum].filter(Boolean).map(function (x) { return x.entity_id; });
-      html += rangeChips('room') + chartsFor(ids, 'room', function (id) { return id === (r.temp && r.temp.entity_id) ? { title: 'Temperatur', unit: '°C', col: 'var(--p1)', dec: 1 } : { title: 'Luftfeuchte', unit: '%', col: 'var(--cool)', dec: 0 }; });
+      html += '<div class="fsec' + (isFolded('room-charts') ? ' folded' : '') + '" data-fold-sec="room-charts"><h3 class="fh">Verlauf<span class="chev">▾</span></h3>' + rangeChips('room') + chartsFor(ids, 'room', function (id) { return id === (r.temp && r.temp.entity_id) ? { title: 'Temperatur', unit: '°C', col: 'var(--p1)', dec: 1 } : { title: 'Luftfeuchte', unit: '%', col: 'var(--cool)', dec: 0 }; }) + '</div>';
     } else if (r.temp) {
       html += '<div class="noclim">🌡️ ' + esc(name(r.temp)) + ': nicht erreichbar</div>';
     }
@@ -586,22 +727,95 @@
       html += '<div class="noclim">🎛️ ' + esc(devName(d)) + (unavailable(s) ? '' : ' · zuletzt ' + timeText(s.state)) + '</div>';
     });
     if (r.cams.length) html += '<div class="noclim">📷 ' + esc(r.cams.map(function (x) { return name(x.s); }).join(', ')) + '</div>';
-    if (r.scenes.length) html += '<h3 class="sub-h">Szenen</h3><div class="scenes room">' + r.scenes.map(function (sc) {
+    if (r.scenes.length) html += '<div class="fsec' + (isFolded('room-scenes') ? ' folded' : '') + '" data-fold-sec="room-scenes"><h3 class="fh">Szenen<span class="chev">▾</span></h3><div class="scenes room">' + r.scenes.map(function (sc) {
       var n = shortName(sc.s, r.name);
       return '<button class="scene" type="button" data-scene="' + esc(sc.s.entity_id) + '"><i>' + sceneIcon(n) + '</i>' + esc(n) + '</button>';
-    }).join('') + '</div>';
+    }).join('') + '</div></div>';
     c.innerHTML = html;
     if (r.lights.length) {
-      c.insertAdjacentHTML('beforeend', '<h3 class="sub-h">Lichter</h3>');
+      var fs = document.createElement('div'); fs.className = 'fsec' + (isFolded('room-lights') ? ' folded' : ''); fs.dataset.foldSec = 'room-lights';
+      fs.innerHTML = '<h3 class="fh">Lichter<span class="chev">▾</span></h3>';
       var g = document.createElement('div'); g.className = 'room-lights';
       r.lights.forEach(function (l) { g.appendChild(lightBtn(l, true)); });
-      c.appendChild(g);
+      fs.appendChild(g); c.appendChild(fs);
     }
     return c;
   }
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-room]'); if (!t) return;
     lsSet(LS_ROOM, t.dataset.room); queueRender();
+  });
+
+  // ---------- Wohnungs-Übersichten (Kacheln oben) ----------
+  var detailKey = 'lights';
+  function renderDetail(m) {
+    var el = $('detail'), html = '';
+    if (detailKey === 'lights') {
+      var on = m.lights.filter(function (l) { return l.s.state === 'on'; }).length;
+      html = '<section class="box"><div class="box-head"><h2>💡 Lichter in der Wohnung</h2><span class="count">' + on + ' von ' + m.lights.length + ' an</span></div><div class="btnrow" style="margin-top:0"><button class="btn ghost small" type="button" data-allon>Alle an</button><button class="btn ghost small" type="button" data-roomlights="__all">Alle aus</button></div></section>';
+      el.innerHTML = html;
+      m.rooms.filter(function (r) { return r.lights.length; }).forEach(function (r) {
+        var n = r.lights.filter(function (l) { return l.s.state === 'on'; }).length;
+        var box = document.createElement('section'); box.className = 'box';
+        box.innerHTML = '<div class="box-head"><h2>' + r.icon + ' ' + esc(r.name) + '</h2><button class="link-btn" type="button" data-roomlights="' + esc(r.id) + '" data-on="' + (n ? 0 : 1) + '">' + (n ? n + ' an · ausschalten' : 'einschalten') + '</button></div>';
+        var g = document.createElement('div'); g.className = 'room-lights';
+        r.lights.forEach(function (l) { g.appendChild(lightBtn(l, true)); });
+        box.appendChild(g); el.appendChild(box);
+      });
+      return;
+    }
+    if (detailKey === 'open') {
+      var cs = m.contacts.slice().sort(function (a, b) { return (b.s.state === 'on') - (a.s.state === 'on'); });
+      var open = cs.filter(function (c) { return c.s.state === 'on'; }).length;
+      html = '<section class="box"><div class="box-head"><h2>🪟 Fenster und Türen</h2><span class="count">' + (cs.length ? open + ' offen' : '') + '</span></div><div class="dlist" style="display:grid;gap:8px">'
+        + (cs.length ? cs.map(function (c) {
+          var s = c.s, isOpen = s.state === 'on', off = unavailable(s), b = num(m.batteries[reg(s.entity_id).device]);
+          return '<div class="contact' + (isOpen ? ' open' : '') + '"><span aria-hidden="true">' + (dc(s) === 'window' ? '🪟' : '🚪') + '</span><div class="txt"><b>' + esc(name(s)) + '</b><small>' + esc(c.room ? c.room.name + ' · ' : '')
+            + (off ? 'nicht erreichbar' : (isOpen ? 'offen seit ' + timeText(s.last_changed) + ' · ' + ago(s.last_changed) : 'zu seit ' + timeText(s.last_changed))) + '</small></div>'
+            + (b != null ? '<span class="batt' + (b < 20 ? ' low' : '') + '">🔋 ' + Math.round(b) + ' %</span>' : '')
+            + '<span class="pill ' + (off ? 'warn' : isOpen ? 'open' : 'ok') + '">' + (off ? '?' : isOpen ? 'Offen' : 'Zu') + '</span></div>';
+        }).join('') : '<div class="empty">Noch keine Tür-/Fenstersensoren in Home Assistant. Sobald die Aqara-Kontakte angelernt sind, erscheinen sie hier.</div>')
+        + '</div></section>';
+      el.innerHTML = html; return;
+    }
+    // Temperatur / Feuchte: alle Räume, gleiche Skala, damit man sie vergleichen kann
+    var isT = detailKey === 'temp', key = isT ? 'temp' : 'hum';
+    var rooms = m.rooms.filter(function (r) { return r[key]; });
+    var vals = rooms.map(function (r) { return num(r[key]); }).filter(function (v) { return v != null; });
+    var avg = vals.length ? vals.reduce(function (a, b) { return a + b; }, 0) / vals.length : null;
+    var o = isT ? { title: '', unit: '°C', col: 'var(--p1)', dec: 1 } : { title: '', unit: '%', col: 'var(--cool)', dec: 0 };
+    var f = function (v) { return v == null ? '–' : o.dec ? fmt1(v) : String(Math.round(v)); };
+    html = '<section class="box"><div class="box-head"><h2>' + (isT ? '🌡️ Temperatur' : '💧 Luftfeuchte') + ' in der Wohnung</h2><span class="count">Ø ' + f(avg) + ' ' + o.unit + '</span></div>'
+      + '<div class="list">' + rooms.slice().sort(function (a, b) { return (num(b[key]) || -99) - (num(a[key]) || -99); }).map(function (r) {
+        var v = num(r[key]), warn = !isT && v >= 65;
+        return '<div class="row"><span class="ico">' + r.icon + '</span><div class="txt"><b>' + esc(r.name) + '</b><small>' + esc(name(r[key])) + '</small></div><span class="dval"' + (warn ? ' style="color:var(--danger)"' : '') + '>' + f(v) + ' ' + o.unit + '</span></div>';
+      }).join('') + '</div></section>';
+    var ids = rooms.map(function (r) { return r[key].entity_id; });
+    html += '<section class="box"><div class="box-head"><h2>Verlauf je Raum</h2></div>' + rangeChips('flat');
+    var data = ids.length ? loadSeries(ids, rangeOf('flat')) : {};
+    if (!data) html += '<div class="cload">Verlauf wird geladen …</div>';
+    else {
+      var lo = Infinity, hi = -Infinity;
+      ids.forEach(function (id) { (data[id] || []).forEach(function (p) { lo = Math.min(lo, p.lo != null ? p.lo : p.v); hi = Math.max(hi, p.hi != null ? p.hi : p.v); }); });
+      rooms.forEach(function (r) { html += chart(data[r[key].entity_id] || [], rangeOf('flat'), { title: r.icon + ' ' + r.name, unit: o.unit, col: o.col, dec: o.dec, lo: lo, hi: hi }); });
+    }
+    el.innerHTML = html + '</section>';
+  }
+  document.addEventListener('click', function (e) {
+    var d = e.target.closest('[data-detail]');
+    if (d) { detailKey = d.dataset.detail; show('detail'); window.scrollTo(0, 0); return; }
+    var rl = e.target.closest('[data-roomlights]');
+    if (rl) {
+      var m = model(), ls = rl.dataset.roomlights === '__all' ? m.lights : (m.rooms.filter(function (r) { return r.id === rl.dataset.roomlights; })[0] || { lights: [] }).lights;
+      var turnOn = rl.dataset.on === '1';
+      var ids = ls.filter(function (l) { return !unavailable(l.s) && (turnOn ? l.s.state !== 'on' : l.s.state === 'on'); }).map(function (l) { return l.s.entity_id; });
+      if (ids.length) callService('light', turnOn ? 'turn_on' : 'turn_off', {}, { entity_id: ids }).catch(function () {});
+      return;
+    }
+    if (e.target.closest('[data-allon]')) {
+      var off = model().lights.filter(function (l) { return !unavailable(l.s) && l.s.state !== 'on'; }).map(function (l) { return l.s.entity_id; });
+      if (off.length) callService('light', 'turn_on', {}, { entity_id: off }).catch(function () {});
+    }
   });
 
   // ---------- Verläufe (Temperatur, Feuchte, Pi) ----------
@@ -662,6 +876,7 @@
     var t1 = Date.now(), t0 = t1 - RANGES[range].ms;
     var lo = Infinity, hi = -Infinity;
     pts.forEach(function (p) { lo = Math.min(lo, p.lo != null ? p.lo : p.v); hi = Math.max(hi, p.hi != null ? p.hi : p.v); });
+    if (o.lo != null && isFinite(o.lo)) { lo = Math.min(lo, o.lo); hi = Math.max(hi, o.hi); }
     var pad = Math.max((hi - lo) * 0.12, o.unit === '%' ? 2 : 0.3); lo -= pad; hi += pad;
     var X = function (t) { return Math.max(0, Math.min(100, (t - t0) / (t1 - t0) * 100)); };
     var Y = function (v) { return (hi - v) / (hi - lo) * 100; };
@@ -854,17 +1069,25 @@
     }
 
     // Fritzbox (Integration „AVM FRITZ!Box Tools“)
-    var fz = m.fritz.slice().sort(function (a, b) { return (a.entity_id.indexOf('binary_') === 0 ? 0 : 1) - (b.entity_id.indexOf('binary_') === 0 ? 0 : 1) || name(a).localeCompare(name(b), 'de'); });
-    $('fritzCount').textContent = fz.length ? fz.length + ' Werte' : '';
-    $('fritz').innerHTML = fz.length ? '<div class="list vals">' + fz.map(function (x) {
-      var a = x.attributes || {}, v;
-      if (unavailable(x)) v = '–';
-      else if (x.entity_id.indexOf('binary_sensor.') === 0) v = x.state === 'on' ? '<span class="pill ok">ja</span>' : '<span class="pill">nein</span>';
-      else if (dc(x) === 'timestamp') v = 'seit ' + esc(ago(x.state));
-      else v = esc(isFinite(parseFloat(x.state)) && String(parseFloat(x.state)) === x.state ? (Math.round(parseFloat(x.state) * 10) / 10).toLocaleString('de-DE') : x.state) + (a.unit_of_measurement ? ' ' + esc(a.unit_of_measurement) : '');
-      return '<div class="row"><div class="txt"><b>' + esc(name(x)) + '</b></div><span class="v">' + v + '</span></div>';
-    }).join('') + '</div>'
-      : '<p class="hint" style="margin:0">Für Werte wie Internet-Geschwindigkeit, Verbindungsdauer und externe IP in HA die Integration „AVM FRITZ!Box Tools“ hinzufügen (Einstellungen → Geräte & Dienste → Integration hinzufügen, Adresse 192.168.188.1, Fritzbox-Benutzer und -Kennwort).</p>';
+    var fk = function (re) { return m.fritz.filter(function (x) { return re.test(reg(x.entity_id).key || x.entity_id); })[0]; };
+    var mbit = function (x) { if (!x || unavailable(x)) return null; var v = parseFloat(x.state), u = (x.attributes.unit_of_measurement || '').toLowerCase(); return u === 'kb/s' ? v * 8 / 1000 : u === 'kbit/s' ? v / 1000 : u === 'mbit/s' ? v : v; };
+    var mb = function (v) { return v == null || !isFinite(v) ? '–' : (v < 10 ? fmt1(v) : Math.round(v)) + ' Mbit/s'; };
+    var conn = fk(/^is_connected$|verbunden$|connection$/), dn = fk(/^kb_s_received$|download_durchsatz|download_throughput/), up = fk(/^kb_s_sent$|upload_durchsatz|upload_throughput/);
+    var ldn = fk(/^link_kb_s_received$|link_download|leitung.*download/), lup = fk(/^link_kb_s_sent$|link_upload|leitung.*upload/);
+    var cup = fk(/^connection_uptime$|verbindungsdauer|connection_uptime|verbunden_seit/), dup = fk(/^device_uptime$|^uptime$|betriebszeit|letzter_neustart/);
+    var ip = fk(/^external_ip$|externe_ip|external_ip$/), gbr = fk(/^gb_received$|empfangen|gb_received/), gbs = fk(/^gb_sent$|gesendet|gb_sent/);
+    var tiles = [];
+    if (conn) tiles.push(['Internet', unavailable(conn) ? '–' : conn.state === 'on' ? '✓ verbunden' : '✕ getrennt']);
+    if (dn || up) tiles.push(['Jetzt ↓ / ↑', mb(mbit(dn)).replace(' Mbit/s', '') + ' / ' + mb(mbit(up))]);
+    if (ldn || lup) tiles.push(['Leitung ↓ / ↑', mb(mbit(ldn)).replace(' Mbit/s', '') + ' / ' + mb(mbit(lup))]);
+    if (cup && !unavailable(cup)) tiles.push(['Online seit', isNaN(new Date(cup.state)) ? cup.state : ago(cup.state)]);
+    if (gbr || gbs) tiles.push(['Daten ↓ / ↑', (gbr ? fmt1(num(gbr) || 0) : '–') + ' / ' + (gbs ? fmt1(num(gbs) || 0) : '–') + ' GB']);
+    if (dup && !unavailable(dup)) tiles.push(['Fritzbox läuft seit', isNaN(new Date(dup.state)) ? dup.state : ago(dup.state)]);
+    if (ip && !unavailable(ip)) tiles.push(['Externe IP', ip.state]);
+    $('fritzCount').textContent = conn && conn.state === 'on' ? 'online' : '';
+    $('fritz').innerHTML = tiles.length ? '<div class="kv">' + tiles.map(function (x) { return '<div class="meter"><span>' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div>'; }).join('') + '</div>'
+      : m.fritz.length ? '<p class="hint" style="margin:0">Fritzbox verbunden, aber keine der üblichen Werte gefunden.</p>'
+      : '<p class="hint" style="margin:0">Für Internet-Geschwindigkeit und Verbindungsdauer in HA die Integration „AVM FRITZ!Box Tools“ hinzufügen.</p>';
 
     var integ = entries.filter(function (e) { return e.source !== 'ignore' && !e.disabled_by; }).length;
     $('haStats').innerHTML = [['Version', haVersion || '–'], ['Integrationen', integ], ['Geräte', Object.keys(devices).length], ['Entitäten', Object.keys(S).length], ['Automationen', m.automations], ['Bereiche', Object.keys(areas).length]]
@@ -913,17 +1136,12 @@
   }
   $('allOff').addEventListener('click', allOff);
 
-  $('targets').addEventListener('click', function (e) {
-    var b = e.target.closest('.chip'); if (!b) return;
-    this.dataset.sel = b.dataset.t;
-    this.querySelectorAll('.chip').forEach(function (c) { c.setAttribute('aria-pressed', c === b); });
-  });
   $('sayForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var inp = $('sayText'), txt = inp.value.trim();
     if (!txt) { toast('Schreib erst, was die Echos sagen sollen.'); inp.focus(); return; }
-    var sel = $('targets').dataset.sel || 'alle';
-    var target = sel === 'alle' ? model().echos.map(function (x) { return x.s.entity_id; }) : [sel];
+    var sel = $('sayTarget').value || 'alle';
+    var target = sel === 'alle' ? model().echos.filter(function (x) { return x.room && !isGroup(x.s) && !unavailable(x.s); }).map(function (x) { return x.s.entity_id; }) : [sel];
     callService('notify', 'alexa_media', { message: txt, target: target, data: { type: 'announce' } })
       .then(function () { toast('Durchsage gesendet.'); inp.value = ''; }).catch(function () {});
   });
@@ -980,11 +1198,6 @@
     lsSet(LS_ROOMS, move(ids, +b.dataset.i, +b.dataset.mv)); _model = null; renderRoomDlg(); queueRender();
   });
   $('roomReset').addEventListener('click', function () { lsSet(LS_ROOMS, null); _model = null; renderRoomDlg(); queueRender(); });
-
-  $('notesHead').addEventListener('click', function () {
-    var open = this.getAttribute('aria-expanded') !== 'true';
-    lsSet(LS_NOTES, open); this.setAttribute('aria-expanded', open); $('notes').hidden = !open;
-  });
 
   // ---------- Licht-Dialog ----------
   var dlgEntity = null, sendTimer = null;
@@ -1057,14 +1270,14 @@
   });
 
   // ---------- Ansichten ----------
-  var views = ['uebersicht', 'raeume', 'kameras', 'system'], current = 'uebersicht', lastView = 'uebersicht';
+  var views = ['uebersicht', 'raeume', 'kameras', 'system', 'detail'], current = 'uebersicht', lastView = 'uebersicht';
   function show(v) {
     if (views.indexOf(v) < 0) v = 'uebersicht';
     current = v;
     var needsConn = setupNeeded && v !== 'system';
     $('welcome').hidden = !needsConn;
     views.forEach(function (x) { $('view-' + x).hidden = x !== v || needsConn; });
-    if (v !== 'system') lastView = v;
+    if (v !== 'system' && v !== 'detail') lastView = v;
     document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.view === v); });
     $('sysBtn').setAttribute('aria-pressed', v === 'system');
     if (connState === 'ok') queueRender();
@@ -1077,7 +1290,7 @@
   // System-Infos: dezent über ⚙️ oben und die Pi-Zeile unten
   $('sysBtn').addEventListener('click', function () { show(current === 'system' ? lastView : 'system'); window.scrollTo(0, 0); });
   $('piLine').addEventListener('click', function () { show('system'); window.scrollTo(0, 0); });
-  $('sysBack').addEventListener('click', function () { show(lastView); window.scrollTo(0, 0); });
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-back]')) { show(lastView); window.scrollTo(0, 0); } });
 
   (function tick() {
     var d = new Date();

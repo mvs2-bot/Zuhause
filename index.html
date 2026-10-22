@@ -352,6 +352,43 @@
   .vals .row b { display: inline; }
   .vals .row .v { font-weight: 800; color: var(--ink); font-size: .88rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
   @media (prefers-reduced-motion: reduce) { .conn.ok.pulse::before { animation: none; } .chev { transition: none; } }
+  /* Einklappen: Kopf antippen */
+  [data-fold] > .box-head, .fh { cursor: pointer; user-select: none; -webkit-user-select: none; }
+  [data-fold] > .box-head { justify-content: flex-start; align-items: center; }
+  [data-fold] > .box-head h2 { margin-right: auto; }
+  .chev { color: var(--mute); transition: transform .2s; display: inline-block; margin-left: 6px; font-size: .9rem; }
+  .folded > .box-head .chev, .folded > .fh .chev { transform: rotate(-90deg); }
+  .box.folded > :not(.box-head) { display: none !important; }
+  .box.folded > .box-head { margin-bottom: 0; }
+  .fsec.folded > :not(.fh) { display: none !important; }
+  .fh { display: flex; justify-content: space-between; align-items: center; margin: 4px 0 0; font-size: .74rem; font-weight: 800; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; }
+  .fsec { display: flex; flex-direction: column; gap: 10px; }
+  button.stat { text-align: left; cursor: pointer; font: inherit; color: inherit; }
+  button.stat:hover { border-color: var(--p1); }
+  .say select { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 8px; font-size: 15px; max-width: 38%; min-width: 0; }
+  .say .btn { padding: 10px 12px; }
+
+  /* Saugroboter, Musik */
+  .vac-top { display: flex; align-items: center; gap: 12px; }
+  .vac-top .ico { font-size: 2rem; line-height: 1; }
+  .vac-top .txt { flex: 1; min-width: 0; }
+  .vac-top b { display: block; color: var(--ink); }
+  .vac-top small { display: block; color: var(--mute); font-size: .8rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .btnrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .vac-map { margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--bg); }
+  .vac-map img { display: block; width: 100%; max-height: 320px; object-fit: contain; }
+  .ctl { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .ctl select { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 9px 8px; font-size: 15px; }
+  .np { display: flex; align-items: center; gap: 12px; }
+  .np img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--bg); flex: 0 0 56px; }
+  .np .txt { flex: 1; min-width: 0; }
+  .np b { display: block; color: var(--ink); font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np small { display: block; color: var(--mute); font-size: .78rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .playing { display: grid; gap: 6px; margin-top: 10px; }
+  .vals2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .dlist .row b small { display: inline; }
+  #fritz .meter b { font-size: 1rem; }
+  .dval { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -384,46 +421,62 @@
     <div class="status" id="status"></div>
 
     <div class="stats" aria-label="Übersicht">
-      <div class="stat"><b id="sLights">–</b><span>Lichter an</span></div>
-      <div class="stat" id="sOpenBox"><b id="sOpen">–</b><span>Fenster/Türen offen</span></div>
-      <div class="stat"><b id="sTemp">–</b><span>Innen Ø</span></div>
-      <div class="stat"><b id="sHum">–</b><span>Feuchte Ø</span></div>
+      <button class="stat" type="button" data-detail="lights"><b id="sLights">–</b><span>Lichter an ›</span></button>
+      <button class="stat" type="button" data-detail="open" id="sOpenBox"><b id="sOpen">–</b><span>Fenster/Türen offen ›</span></button>
+      <button class="stat" type="button" data-detail="temp"><b id="sTemp">–</b><span>Innen Ø ›</span></button>
+      <button class="stat" type="button" data-detail="hum"><b id="sHum">–</b><span>Feuchte Ø ›</span></button>
     </div>
 
-    <section class="box" id="weatherBox" hidden>
+    <section class="box" id="weatherBox" data-fold="weather" hidden>
       <div class="box-head"><h2>Wetter Straubing</h2><span class="count" id="weatherWhen"></span></div>
       <div id="weather"></div>
     </section>
 
-    <section class="box" id="heatBox" hidden>
+    <section class="box" id="vacBox" data-fold="vacuum" hidden>
+      <div class="box-head"><h2>Saugroboter</h2><span class="count" id="vacCount"></span></div>
+      <div id="vac"></div>
+    </section>
+
+    <section class="box" id="heatBox" data-fold="heat" hidden>
       <div class="box-head"><h2>Heizung</h2><span class="count" id="heatCount"></span></div>
       <div class="heat-list" id="heat"></div>
     </section>
 
-    <section class="box">
-      <button class="box-head fold" type="button" id="notesHead" aria-expanded="true" aria-controls="notes"><h2>Hinweise</h2><span class="fold-r"><span class="count" id="noteCount"></span><span class="chev" aria-hidden="true">▾</span></span></button>
+    <section class="box" data-fold="notes">
+      <div class="box-head"><h2>Hinweise</h2><span class="count" id="noteCount"></span></div>
       <div class="notes" id="notes"></div>
     </section>
 
-    <section class="box">
+    <section class="box" data-fold="scenes">
       <div class="box-head"><h2>Szenen</h2><button class="link-btn" type="button" id="favBtn">Bearbeiten</button></div>
       <div class="scenes" id="scenes"></div>
     </section>
 
-    <section class="box">
+    <section class="box" data-fold="lights">
       <div class="box-head"><h2>Lichter</h2><span class="head-links"><button class="link-btn" type="button" data-roomorder>Räume sortieren</button><button class="link-btn" type="button" id="allOff">Alle aus</button></span></div>
       <div id="lights"></div>
       <p class="hint">Tippen schaltet, lange drücken für Helligkeit und Farbe.</p>
     </section>
 
-    <section class="box" id="sayBox" hidden>
-      <div class="box-head"><h2>Durchsage an die Echos</h2></div>
-      <div class="chips wrap" id="targets"></div>
+    <section class="box" id="musicBox" data-fold="music" hidden>
+      <div class="box-head"><h2>Musik</h2><span class="count" id="musicCount"></span></div>
+      <div id="music"></div>
+    </section>
+
+    <section class="box" id="sayBox" data-fold="say" hidden>
+      <div class="box-head"><h2>Durchsage</h2></div>
       <form class="say" id="sayForm">
+        <select id="sayTarget" aria-label="Wohin"></select>
         <input type="text" id="sayText" placeholder="z. B. Essen ist fertig!" aria-label="Text der Durchsage">
-        <button class="btn" type="submit">Senden</button>
+        <button class="btn" type="submit" aria-label="Senden">📢</button>
       </form>
     </section>
+  </section>
+
+  <!-- Wohnungs-Übersicht hinter den Kacheln -->
+  <section id="view-detail" class="view" hidden>
+    <button class="link-btn back" type="button" data-back>← Zurück</button>
+    <div id="detail"></div>
   </section>
 
   <!-- Räume -->
@@ -442,41 +495,41 @@
 
   <!-- System -->
   <section id="view-system" class="view" hidden>
-    <button class="link-btn back" type="button" id="sysBack">← Zurück</button>
-    <section class="box">
+    <button class="link-btn back" type="button" id="sysBack" data-back>← Zurück</button>
+    <section class="box" data-fold="pi">
       <div class="box-head"><h2>Raspberry Pi 4</h2><span class="pill" id="haVersion"></span></div>
       <div class="kv" id="pi"></div>
       <p class="hint" id="piHint"></p>
     </section>
 
-    <section class="box" id="sysChartBox" hidden>
+    <section class="box" data-fold="pichart" id="sysChartBox" hidden>
       <div class="box-head"><h2>Verlauf Raspberry Pi</h2></div>
       <div class="ranges" data-range="sys"></div>
       <div id="sysCharts"></div>
     </section>
 
-    <section class="box">
+    <section class="box" data-fold="fritz">
       <div class="box-head"><h2>Fritzbox</h2><span class="count" id="fritzCount"></span></div>
       <div id="fritz"></div>
     </section>
 
-    <section class="box">
+    <section class="box" data-fold="ha">
       <div class="box-head"><h2>Home Assistant</h2></div>
       <div class="kv" id="haStats"></div>
     </section>
 
-    <section class="box">
+    <section class="box" data-fold="svc">
       <div class="box-head"><h2>Dienste</h2><span class="count" id="svcCount"></span></div>
       <div class="list" id="services"></div>
     </section>
 
-    <section class="box">
+    <section class="box" data-fold="zigbee">
       <div class="box-head"><h2>Zigbee-Geräte</h2><span class="count" id="zbCount"></span></div>
       <div class="list" id="zigbee"></div>
       <p class="hint">Sortiert nach Batteriestand. Balken = Funkqualität zum Sonoff-Stick (nur wenn der LQI-Sensor in HA aktiviert ist).</p>
     </section>
 
-    <section class="box">
+    <section class="box" data-fold="conn">
       <div class="box-head"><h2>Verbindung zu Home Assistant</h2><span class="pill warn" id="connPill">nicht verbunden</span></div>
       <div data-connform></div>
       <p class="hint">Das Token bleibt nur auf diesem Gerät gespeichert. Home Assistant ist ausschließlich über Tailscale erreichbar, nicht offen im Internet.</p>
