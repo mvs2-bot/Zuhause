@@ -6,11 +6,12 @@ Eigenes Smart-Home-Dashboard als PWA für Home Assistant auf dem Raspberry Pi 4.
 
 ## Was die App kann
 
-- **Übersicht:** Lage-Banner (Türen/Fenster, Bewegung), Lichter an, Ø Temperatur und Feuchte, Hinweise (Lüften, Batterie, Geräte offline, Updates, Backup), Lieblingsszenen, alle Lampen. Tippen schaltet, lange drücken öffnet Helligkeit, Farbtemperatur und Farbe.
-- **Räume:** je HA-Bereich Klima mit 12-h-Verlauf, Tür-/Fensterkontakte, Bewegungsmelder, Taster (letzter Druck), Kameras, Hue-Szenen und Lampen.
+- **Übersicht:** kompaktes Lage-Banner, Kacheln (Lichter, offene Fenster/Türen, Ø Temperatur und Feuchte), Wetter (HA-Wetter-Eintrag, 5-Tage-Vorhersage), Heizung, einklappbare Hinweise, Szenen in eigener Reihenfolge („Alles aus“ hervorgehoben), Lichter nach Raum gruppiert. Tippen schaltet, lange drücken öffnet Helligkeit, Farbtemperatur und Farbe.
+- **Räume:** Raum-Kacheln oben, darunter der gewählte Raum mit Klima-Verlauf (24 h / 7 Tage / 30 Tage, mit Min/Max-Band und Tooltip), Thermostaten, Kontakten, Bewegung, Tastern, Szenen und Lampen. Raum-Reihenfolge einstellbar.
 - **Kameras:** Blink scharf/unscharf, letztes Bild je Kamera, „Neues Bild“ (`blink.trigger_camera`).
-- **System:** HA-Version, Pi-Werte (wenn „System Monitor“ eingerichtet ist), alle Integrationen mit Status, Zigbee-Geräte mit Batterie und Funkqualität, Verbindung.
+- **System (⚙️ oben oder Pi-Zeile unten):** Pi-Werte und -Verlauf (System Monitor), Fritzbox (AVM FRITZ!Box Tools), HA-Kennzahlen, Integrationen, Zigbee-Geräte, Verbindung.
 - **Durchsage an die Echos:** erscheint automatisch, sobald Alexa Media Player eingerichtet ist.
+- Live-Updates per Abo, „verbunden“ pulsiert bei jeder Änderung. Persönliche Einstellungen (Szenen, Raum-Reihenfolge, Zeitraum) liegen nur im localStorage des Geräts.
 
 Nichts ist fest verdrahtet: Räume, Lampen, Sensoren und Kameras kommen aus den HA-Registern (Bereiche, Geräte, Entitäten). Neue Geräte erscheinen von selbst im richtigen Raum, sobald sie in HA einem Bereich zugeordnet sind. Versteckte Entitäten (in HA ausgeblendet) und Diagnose-Entitäten werden ignoriert.
 

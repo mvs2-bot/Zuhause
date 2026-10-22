@@ -6,7 +6,8 @@
   'use strict';
 
   var DEFAULT_URL = 'https://homeassistant.taildd4a66.ts.net';
-  var LS_CONN = 'zuhause-ha', LS_FAV = 'zuhause-fav-scenes';
+  var LS_CONN = 'zuhause-ha', LS_FAV = 'zuhause-fav-scenes', LS_SCENES = 'zuhause-scenes', LS_ROOMS = 'zuhause-room-order',
+    LS_ROOM = 'zuhause-room', LS_NOTES = 'zuhause-notes-open', LS_RANGE = 'zuhause-range-';
 
   // Reihenfolge und Symbole der Räume (HA-Bereichsnamen); unbekannte Bereiche kommen alphabetisch dahinter
   var ROOM_ORDER = ['wohnzimmer', 'küche', 'schlafzimmer', 'büro', 'badezimmer', 'flur', 'toilette', 'keller'];
@@ -14,6 +15,12 @@
   var SVC_ICON = { homeassistant: '🏠', hue: '💡', zha: '📡', blink: '📷', alexa_media: '🔵', google_drive: '☁️', backup: '💾', tailscale: '🔐',
     adguard: '🛡️', matter: '🧩', thread: '🧵', systemmonitor: '📊', met: '🌦️', sun: '☀️', shopping_list: '🛒', radio_browser: '📻', mobile_app: '📱',
     google_translate: '🗣️', hassio: '🧰', go2rtc: '🎥', backup_google_drive: '☁️' };
+  var WEATHER = { 'clear-night': ['🌙', 'Klar'], cloudy: ['☁️', 'Bewölkt'], fog: ['🌫️', 'Nebel'], hail: ['🌨️', 'Hagel'], lightning: ['🌩️', 'Gewitter'],
+    'lightning-rainy': ['⛈️', 'Gewitter mit Regen'], partlycloudy: ['⛅', 'Teils bewölkt'], pouring: ['🌧️', 'Starkregen'], rainy: ['🌦️', 'Regen'],
+    snowy: ['❄️', 'Schnee'], 'snowy-rainy': ['🌨️', 'Schneeregen'], sunny: ['☀️', 'Sonnig'], windy: ['💨', 'Windig'], 'windy-variant': ['💨', 'Windig, bewölkt'], exceptional: ['⚠️', 'Unwetter'] };
+  var HVAC = { off: 'Aus', heat: 'Heizen', auto: 'Auto', heat_cool: 'Auto', cool: 'Kühlen', dry: 'Trocknen', fan_only: 'Lüfter' };
+  // Zeiträume für Verläufe: Langzeitstatistik von HA (5-Minuten-, Stunden-, Tageswerte)
+  var RANGES = { '24h': { label: '24 h', ms: 864e5, period: '5minute' }, '7d': { label: '7 Tage', ms: 7 * 864e5, period: 'hour' }, '30d': { label: '30 Tage', ms: 30 * 864e5, period: 'day' } };
   var SVC_HIDE = { sun: 1, radio_browser: 1, google_translate: 1, shopping_list: 1, go2rtc: 1 };
   var COLORS = ['#ffb35c', '#ffd27a', '#fff4e0', '#ff5a4f', '#ff9a3c', '#ffe14d', '#4fd96b', '#47b5ff', '#7a6bff', '#d65cff', '#ff6fb5'];
 
@@ -171,13 +178,29 @@
     loadAll().then(function () {
       subscribe('state_changed', function (e) {
         if (e.data.new_state) S[e.data.entity_id] = e.data.new_state; else delete S[e.data.entity_id];
+        if (/^(light|binary_sensor|climate|alarm_control_panel|switch|media_player|cover|lock)\./.test(e.data.entity_id)) pulse();
         queueRender();
       });
       ['area_registry_updated', 'device_registry_updated', 'entity_registry_updated'].forEach(function (t) {
         subscribe(t, function () { clearTimeout(loadAll.t); loadAll.t = setTimeout(loadRegistries, 1500); });
       });
       loadHistory();
+      subscribeWeather();
     }).catch(function (e) { toast('Laden fehlgeschlagen: ' + e.message); });
+  }
+
+  function pulse() {
+    var c = $('conn'); c.classList.remove('pulse'); void c.offsetWidth; c.classList.add('pulse');
+  }
+
+  // Wettervorhersage (täglich) vom Wetter-Eintrag in HA, kommt per Abo und aktualisiert sich selbst
+  var forecast = [], weatherSubbed = null;
+  function subscribeWeather() {
+    var w = Object.keys(S).filter(function (id) { return id.indexOf('weather.') === 0; })[0];
+    if (!w || weatherSubbed === ws) return;
+    weatherSubbed = ws;
+    subs[msgId + 1] = function (ev) { forecast = ev.forecast || []; queueRender(); };
+    send({ type: 'weather/subscribe_forecast', forecast_type: 'daily', entity_id: w }).catch(function () { weatherSubbed = null; });
   }
 
   function refreshStates() {
@@ -259,13 +282,16 @@
     var roomMap = {};
     Object.keys(areas).forEach(function (id) {
       var a = areas[id];
-      roomMap[id] = { id: id, name: a.name, icon: ROOM_ICON[a.name.toLowerCase()] || '🚪', lights: [], temps: [], hums: [], contacts: [], motions: [], cams: [], scenes: [], echos: [], buttons: {} };
+      roomMap[id] = { id: id, name: a.name, icon: ROOM_ICON[a.name.toLowerCase()] || '🚪', lights: [], temps: [], hums: [], contacts: [], motions: [], cams: [], scenes: [], echos: [], climates: [], buttons: {} };
     });
-    var m = { rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
+    var m = { rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], weather: null, fritz: [], automations: 0, batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
 
     Object.keys(S).forEach(function (id) {
       var s = S[id], dom = id.split('.')[0], e = reg(id), r = roomMap[areaOf(id)] || null;
       if (e.platform === 'systemmonitor') m.sys[id] = s;
+      if (e.platform === 'fritz' && /^(sensor|binary_sensor)$/.test(dom) && visible(id)) m.fritz.push(s);
+      if (dom === 'automation') m.automations++;
+      if (dom === 'weather' && !m.weather) m.weather = s;
       if (dom === 'sensor' && dc(s) === 'battery' && visible(id) && e.device) m.batteries[e.device] = s;
       if (dom === 'sensor' && /_lqi$/.test(id) && e.device) m.lqi[e.device] = s;
       if (dom === 'update' && s.state === 'on' && visible(id)) m.updates.push(s);
@@ -280,6 +306,7 @@
       else if (dom === 'binary_sensor' && /^(motion|occupancy|presence)$/.test(dc(s)) && e.platform !== 'blink') { if (r) r.motions.push(s); }
       else if (dom === 'camera') { var cam = { s: s, room: r }; m.cams.push(cam); if (r) r.cams.push(cam); }
       else if (dom === 'alarm_control_panel') m.alarms.push(s);
+      else if (dom === 'climate') { var cl = { s: s, room: r }; m.climates.push(cl); if (r) r.climates.push(cl); }
       else if (dom === 'scene') { var sc = { s: s, room: r }; m.scenes.push(sc); if (r) r.scenes.push(sc); }
       else if (dom === 'media_player' && e.platform === 'alexa_media') { var ec = { s: s, room: r }; m.echos.push(ec); if (r) r.echos.push(ec); }
       else if (dom === 'event' && e.device && r) {
@@ -289,10 +316,14 @@
       }
     });
 
-    var order = function (n) { var i = ROOM_ORDER.indexOf(n.toLowerCase()); return i < 0 ? 99 : i; };
+    var mine = lsGet(LS_ROOMS) || [];
+    var def = function (n) { var i = ROOM_ORDER.indexOf(n.toLowerCase()); return i < 0 ? 99 : i; };
+    var orderOf = function (r) { var i = mine.indexOf(r.id); return i < 0 ? 1000 + def(r.name) : i; };
     m.rooms = Object.keys(roomMap).map(function (k) { return roomMap[k]; }).sort(function (a, b) {
-      return order(a.name) - order(b.name) || a.name.localeCompare(b.name, 'de');
+      return orderOf(a) - orderOf(b) || a.name.localeCompare(b.name, 'de');
     });
+    var pos = {}; m.rooms.forEach(function (r, i) { pos[r.id] = i; });
+    var order = function (n) { var r = m.rooms.filter(function (x) { return x.name === n; })[0]; return r ? pos[r.id] : 99; };
     m.rooms.forEach(function (r) {
       r.temp = r.temps.filter(function (s) { return !unavailable(s); })[0] || r.temps[0] || null;
       r.hum = r.hums.filter(function (s) { return !unavailable(s); })[0] || r.hums[0] || null;
@@ -301,7 +332,7 @@
       var ra = a.room ? order(a.room.name) : 100, rb = b.room ? order(b.room.name) : 100;
       return ra - rb || name(a.s).localeCompare(name(b.s), 'de');
     };
-    m.lights.sort(byRoom); m.contacts.sort(byRoom); m.cams.sort(byRoom); m.scenes.sort(byRoom); m.echos.sort(byRoom);
+    m.lights.sort(byRoom); m.climates.sort(byRoom); m.contacts.sort(byRoom); m.cams.sort(byRoom); m.scenes.sort(byRoom); m.echos.sort(byRoom);
     _model = m;
     return m;
   }
@@ -313,7 +344,7 @@
     requestAnimationFrame(function () { renderQueued = false; render(); });
   }
   function render() {
-    _model = null;
+    _model = null; chartData = {};
     if (connState !== 'ok' && !Object.keys(S).length) return;
     var m = model();
     renderOverview(m); renderRooms(m); renderCams(m); renderSystem(m);
@@ -326,7 +357,7 @@
     return { on: on, lvl: lvl, col: col, off: unavailable(s) };
   }
 
-  function lightBtn(l, small) {
+  function lightBtn(l, small, noRoom) {
     var s = l.s, i = lightInfo(s);
     var b = document.createElement('button');
     b.type = 'button';
@@ -335,7 +366,7 @@
     b.setAttribute('aria-pressed', i.on);
     b.dataset.entity = s.entity_id;
     b.innerHTML = '<div class="top"><span class="bulb">💡</span><span class="lvl">' + (i.off ? 'offline' : i.on ? i.lvl + ' %' : 'Aus') + '</span></div>'
-      + '<div><div class="name">' + esc(small && l.room ? shortName(s, l.room.name) : name(s)) + '</div>' + (small || !l.room ? '' : '<div class="room">' + esc(l.room.name) + '</div>') + '</div>'
+      + '<div><div class="name">' + esc((small || noRoom) && l.room ? shortName(s, l.room.name) : name(s)) + '</div>' + (small || noRoom || !l.room ? '' : '<div class="room">' + esc(l.room.name) + '</div>') + '</div>'
       + '<div class="bar"><div style="width:' + i.lvl + '%"></div></div>';
     return b;
   }
@@ -362,7 +393,17 @@
 
   function renderOverview(m) {
     var el = $('lights'); el.innerHTML = '';
-    m.lights.forEach(function (l) { el.appendChild(lightBtn(l, false)); });
+    var groups = m.rooms.filter(function (r) { return r.lights.length; }).map(function (r) { return { name: r.name, lights: r.lights }; });
+    var loose = m.lights.filter(function (l) { return !l.room; });
+    if (loose.length) groups.push({ name: 'Ohne Raum', lights: loose });
+    groups.forEach(function (g) {
+      var on = g.lights.filter(function (l) { return l.s.state === 'on'; }).length;
+      var d = document.createElement('div'); d.className = 'lgroup';
+      d.innerHTML = '<h3 class="glabel">' + esc(g.name) + (on ? '<span>' + on + ' an</span>' : '') + '</h3>';
+      var grid = document.createElement('div'); grid.className = 'lights';
+      g.lights.forEach(function (l) { grid.appendChild(lightBtn(l, false, true)); });
+      d.appendChild(grid); el.appendChild(d);
+    });
     if (!m.lights.length) el.innerHTML = '<div class="empty">Keine Lampen gefunden.</div>';
 
     var on = m.lights.filter(function (l) { return l.s.state === 'on'; }).length;
@@ -417,15 +458,25 @@
     $('notes').innerHTML = notes.length ? notes.map(function (n) { return '<div class="note ' + n.cls + '"><span class="dot"></span><div><b>' + esc(n.t) + '</b><small>' + esc(n.d) + '</small></div></div>'; }).join('')
       : '<div class="empty">Nichts zu tun.</div>';
     var warnCount = notes.filter(function (n) { return n.cls !== 'info'; }).length;
-    $('noteCount').textContent = warnCount ? warnCount + ' offen' : 'nichts zu tun';
+    $('noteCount').textContent = warnCount ? warnCount + ' offen' : notes.length ? notes.length + ' Infos' : 'nichts zu tun';
+    var openNotes = lsGet(LS_NOTES) !== false;
+    $('notesHead').setAttribute('aria-expanded', openNotes);
+    $('notes').hidden = !openNotes;
 
-    // Szenen: Favoriten dieses Geräts + „Alles aus“
-    var fav = lsGet(LS_FAV) || [];
-    var favScenes = fav.map(function (id) { return S[id] ? { s: S[id] } : null; }).filter(Boolean);
-    $('scenes').innerHTML = favScenes.map(function (sc) {
-      return '<button class="scene" type="button" data-scene="' + esc(sc.s.entity_id) + '"><i>' + sceneIcon(name(sc.s)) + '</i>' + esc(name(sc.s)) + '</button>';
-    }).join('') + '<button class="scene" type="button" data-scene="__off"><i>🌙</i>Alles aus</button>';
-    $('favBtn').hidden = !m.scenes.length;
+    // Szenen: eigene Auswahl und Reihenfolge dieses Geräts, „Alles aus“ hervorgehoben
+    $('scenes').innerHTML = favScenes().map(function (id) {
+      if (id === '__off') return '<button class="scene off" type="button" data-scene="__off"><i>⏻</i>Alles aus</button>';
+      var sc = S[id];
+      return '<button class="scene" type="button" data-scene="' + esc(id) + '"><i>' + sceneIcon(name(sc)) + '</i>' + esc(name(sc)) + '</button>';
+    }).join('') || '<div class="empty">Keine Szenen gewählt.</div>';
+
+    renderWeather(m);
+    $('heatBox').hidden = !m.climates.length;
+    if (m.climates.length) {
+      $('heat').innerHTML = m.climates.map(function (c) { return heatRow(c.s, c.room ? c.room.name : ''); }).join('');
+      var heating = m.climates.filter(function (c) { return c.s.attributes.hvac_action === 'heating'; }).length;
+      $('heatCount').textContent = heating ? heating + ' heizt' : '';
+    }
 
     // Durchsage (erscheint, sobald Alexa Media Player eingerichtet ist)
     $('sayBox').hidden = !m.echos.length;
@@ -473,60 +524,236 @@
   }
 
   function renderRooms(m) {
-    var el = $('rooms'); el.innerHTML = '';
-    m.rooms.forEach(function (r) {
-      var c = document.createElement('section');
-      var anyOpen = r.contacts.some(function (x) { return x.s.state === 'on'; });
-      var bare = !r.lights.length && !r.temp && !r.contacts.length && !r.motions.length && !r.cams.length && !Object.keys(r.buttons).length && !r.echos.length;
-      c.className = 'box room-card' + (anyOpen ? ' alert' : '') + (bare ? ' bare' : '');
-      var html = '<div class="room-head"><h2><span aria-hidden="true">' + r.icon + '</span>' + esc(r.name) + '</h2>'
-        + (r.echos.length ? '<span class="pill info">🔵 Echo</span>' : '') + '</div>';
-      if (bare) { c.innerHTML = html + '<div class="noclim">Noch keine Geräte</div>'; el.appendChild(c); return; }
-
-      var t = num(r.temp), h = num(r.hum);
-      if (t != null) {
-        var k = t >= 23 ? 'warm' : t < 19 ? 'cold' : '';
-        var col = k === 'warm' ? 'var(--p1)' : k === 'cold' ? 'var(--cool)' : 'var(--mute)';
-        var hist = tempHist[r.temp.entity_id];
-        html += '<div class="clim ' + k + '"><div><div class="t">' + fmt1(t) + '<small> °C</small></div>'
-          + (h != null ? '<div class="h">💧 ' + Math.round(h) + ' %' + (h >= 65 ? ' · Lüften' : '') + '</div>' : '') + '</div>'
-          + (hist && hist.length > 1 ? '<div style="color:' + col + '">' + spark(hist) + '</div><div class="axis"><span>vor 12 h · ' + fmt1(hist[0][1]) + '°</span><span>jetzt</span></div>' : '<div></div>')
-          + '</div>';
-      } else if (r.temp) {
-        html += '<div class="noclim">🌡️ ' + esc(name(r.temp)) + ': nicht erreichbar</div>';
-      }
-      r.contacts.forEach(function (ct) {
-        var s = ct.s, isOpen = s.state === 'on', off = unavailable(s);
-        var b = num(m.batteries[reg(s.entity_id).device]);
-        html += '<div class="contact' + (isOpen ? ' open' : '') + '"><span aria-hidden="true">' + (dc(s) === 'window' ? '🪟' : '🚪') + '</span><div class="txt"><b>' + esc(name(s)) + '</b><small>'
-          + (off ? 'nicht erreichbar' : (isOpen ? 'offen seit ' + timeText(s.last_changed) + ' · ' + ago(s.last_changed) : 'zu seit ' + timeText(s.last_changed))) + '</small></div>'
-          + (b != null ? '<span class="batt' + (b < 20 ? ' low' : '') + '">🔋 ' + Math.round(b) + ' %</span>' : '')
-          + '<span class="pill ' + (off ? 'warn' : isOpen ? 'open' : 'ok') + '">' + (off ? '?' : isOpen ? 'Offen' : 'Zu') + '</span></div>';
-      });
-      r.motions.forEach(function (s) {
-        var on = s.state === 'on';
-        html += '<div class="contact' + (on ? ' active' : '') + '"><span aria-hidden="true">🚶</span><div class="txt"><b>' + esc(name(s)) + '</b><small>'
-          + (unavailable(s) ? 'nicht erreichbar' : on ? 'Bewegung seit ' + timeText(s.last_changed) : 'zuletzt ' + timeText(s.last_changed) + ' · vor ' + ago(s.last_changed)) + '</small></div>'
-          + '<span class="pill ' + (on ? 'warn' : 'ok') + '">' + (on ? 'Bewegung' : 'ruhig') + '</span></div>';
-      });
-      Object.keys(r.buttons).forEach(function (d) {
-        var s = r.buttons[d];
-        html += '<div class="noclim">🎛️ ' + esc(devName(d)) + (unavailable(s) ? '' : ' · zuletzt ' + timeText(s.state)) + '</div>';
-      });
-      if (r.cams.length) html += '<div class="noclim">📷 ' + esc(r.cams.map(function (x) { return name(x.s); }).join(', ')) + '</div>';
-      if (r.scenes.length) html += '<div class="chips">' + r.scenes.map(function (sc) { return '<button class="chip" type="button" data-scene="' + esc(sc.s.entity_id) + '">' + esc(shortName(sc.s, r.name)) + '</button>'; }).join('') + '</div>';
-      c.innerHTML = html;
-      if (r.lights.length) {
-        var g = document.createElement('div'); g.className = 'room-lights';
-        r.lights.forEach(function (l) { g.appendChild(lightBtn(l, true)); });
-        c.appendChild(g);
-      } else {
-        c.insertAdjacentHTML('beforeend', '<div class="noclim">Keine Lampe</div>');
-      }
-      el.appendChild(c);
-    });
-    if (!m.rooms.length) el.innerHTML = '<div class="box empty">Keine Bereiche in Home Assistant gefunden.</div>';
+    var tiles = $('roomTiles'), det = $('roomDetail');
+    if (!m.rooms.length) { tiles.innerHTML = ''; det.innerHTML = '<div class="box empty">Keine Bereiche in Home Assistant gefunden.</div>'; return; }
+    var sel = lsGet(LS_ROOM);
+    var r = m.rooms.filter(function (x) { return x.id === sel; })[0] || m.rooms[0];
+    tiles.innerHTML = m.rooms.map(function (x) {
+      var open = x.contacts.filter(function (c) { return c.s.state === 'on'; }).length;
+      var on = x.lights.filter(function (l) { return l.s.state === 'on'; }).length;
+      var t = num(x.temp), heat = x.climates.some(function (c) { return c.s.attributes.hvac_action === 'heating'; });
+      var bits = [];
+      if (open) bits.push('🪟 offen');
+      if (t != null) bits.push(fmt1(t) + '°');
+      if (heat) bits.push('🔥');
+      if (on) bits.push('💡' + on);
+      return '<button class="rtile' + (open ? ' alert' : '') + '" type="button" data-room="' + esc(x.id) + '" aria-pressed="' + (x === r) + '"><i aria-hidden="true">' + x.icon + '</i><b>' + esc(x.name) + '</b><small>' + (bits.join(' · ') || '&nbsp;') + '</small></button>';
+    }).join('');
+    det.innerHTML = '';
+    det.appendChild(roomCard(r, m));
   }
+
+  function roomCard(r, m) {
+    var c = document.createElement('section');
+    var anyOpen = r.contacts.some(function (x) { return x.s.state === 'on'; });
+    var bare = !r.lights.length && !r.temp && !r.hum && !r.contacts.length && !r.motions.length && !r.cams.length && !Object.keys(r.buttons).length && !r.echos.length && !r.climates.length;
+    c.className = 'box room-card' + (anyOpen ? ' alert' : '');
+    var html = '<div class="room-head"><h2><span aria-hidden="true">' + r.icon + '</span>' + esc(r.name) + '</h2>'
+      + (r.echos.length ? '<span class="pill info">🔵 Echo</span>' : '') + '</div>';
+    if (bare) { c.innerHTML = html + '<div class="noclim">Noch keine Geräte in diesem Raum.</div>'; return c; }
+
+    var t = num(r.temp), h = num(r.hum);
+    if (t != null || h != null) {
+      var k = t == null ? '' : t >= 23 ? 'warm' : t < 19 ? 'cold' : '';
+      html += '<div class="clim ' + k + '"><div>' + (t != null ? '<div class="t">' + fmt1(t) + '<small> °C</small></div>' : '')
+        + (h != null ? '<div class="h">💧 ' + Math.round(h) + ' %' + (h >= 65 ? ' · Lüften' : '') + '</div>' : '') + '</div><div></div></div>';
+      var ids = [r.temp, r.hum].filter(Boolean).map(function (x) { return x.entity_id; });
+      html += rangeChips('room') + chartsFor(ids, 'room', function (id) { return id === (r.temp && r.temp.entity_id) ? { title: 'Temperatur', unit: '°C', col: 'var(--p1)', dec: 1 } : { title: 'Luftfeuchte', unit: '%', col: 'var(--cool)', dec: 0 }; });
+    } else if (r.temp) {
+      html += '<div class="noclim">🌡️ ' + esc(name(r.temp)) + ': nicht erreichbar</div>';
+    }
+    if (r.climates.length) html += '<div class="heat-list">' + r.climates.map(function (x) { return heatRow(x.s, r.name); }).join('') + '</div>';
+    r.contacts.forEach(function (ct) {
+      var s = ct.s, isOpen = s.state === 'on', off = unavailable(s);
+      var b = num(m.batteries[reg(s.entity_id).device]);
+      html += '<div class="contact' + (isOpen ? ' open' : '') + '"><span aria-hidden="true">' + (dc(s) === 'window' ? '🪟' : '🚪') + '</span><div class="txt"><b>' + esc(name(s)) + '</b><small>'
+        + (off ? 'nicht erreichbar' : (isOpen ? 'offen seit ' + timeText(s.last_changed) + ' · ' + ago(s.last_changed) : 'zu seit ' + timeText(s.last_changed))) + '</small></div>'
+        + (b != null ? '<span class="batt' + (b < 20 ? ' low' : '') + '">🔋 ' + Math.round(b) + ' %</span>' : '')
+        + '<span class="pill ' + (off ? 'warn' : isOpen ? 'open' : 'ok') + '">' + (off ? '?' : isOpen ? 'Offen' : 'Zu') + '</span></div>';
+    });
+    r.motions.forEach(function (s) {
+      var on = s.state === 'on';
+      html += '<div class="contact' + (on ? ' active' : '') + '"><span aria-hidden="true">🚶</span><div class="txt"><b>' + esc(name(s)) + '</b><small>'
+        + (unavailable(s) ? 'nicht erreichbar' : on ? 'Bewegung seit ' + timeText(s.last_changed) : 'zuletzt ' + timeText(s.last_changed) + ' · vor ' + ago(s.last_changed)) + '</small></div>'
+        + '<span class="pill ' + (on ? 'warn' : 'ok') + '">' + (on ? 'Bewegung' : 'ruhig') + '</span></div>';
+    });
+    Object.keys(r.buttons).forEach(function (d) {
+      var s = r.buttons[d];
+      html += '<div class="noclim">🎛️ ' + esc(devName(d)) + (unavailable(s) ? '' : ' · zuletzt ' + timeText(s.state)) + '</div>';
+    });
+    if (r.cams.length) html += '<div class="noclim">📷 ' + esc(r.cams.map(function (x) { return name(x.s); }).join(', ')) + '</div>';
+    if (r.scenes.length) html += '<h3 class="sub-h">Szenen</h3><div class="scenes room">' + r.scenes.map(function (sc) {
+      var n = shortName(sc.s, r.name);
+      return '<button class="scene" type="button" data-scene="' + esc(sc.s.entity_id) + '"><i>' + sceneIcon(n) + '</i>' + esc(n) + '</button>';
+    }).join('') + '</div>';
+    c.innerHTML = html;
+    if (r.lights.length) {
+      c.insertAdjacentHTML('beforeend', '<h3 class="sub-h">Lichter</h3>');
+      var g = document.createElement('div'); g.className = 'room-lights';
+      r.lights.forEach(function (l) { g.appendChild(lightBtn(l, true)); });
+      c.appendChild(g);
+    }
+    return c;
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-room]'); if (!t) return;
+    lsSet(LS_ROOM, t.dataset.room); queueRender();
+  });
+
+  // ---------- Verläufe (Temperatur, Feuchte, Pi) ----------
+  var statCache = {}, statLoading = {}, chartData = {}, chartSeq = 0;
+  function rangeOf(ctx) { var r = lsGet(LS_RANGE + ctx); return RANGES[r] ? r : '24h'; }
+  function rangeChips(ctx) {
+    var cur = rangeOf(ctx);
+    return '<div class="ranges">' + Object.keys(RANGES).map(function (k) {
+      return '<button class="chip" type="button" data-range-ctx="' + ctx + '" data-range-v="' + k + '" aria-pressed="' + (k === cur) + '">' + RANGES[k].label + '</button>';
+    }).join('') + '</div>';
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-range-v]'); if (!b) return;
+    lsSet(LS_RANGE + b.dataset.rangeCtx, b.dataset.rangeV); queueRender();
+  });
+
+  // Holt Mittel-, Min- und Maxwerte aus der HA-Langzeitstatistik; ohne Statistik (kein state_class) aus dem Verlauf
+  function loadSeries(ids, range) {
+    var key = range + '|' + ids.join(',');
+    var c = statCache[key];
+    if (c && Date.now() - c.at < 5 * 60000) return c.data;
+    if (statLoading[key]) return c ? c.data : null;
+    statLoading[key] = true;
+    var R = RANGES[range], start = new Date(Date.now() - R.ms).toISOString();
+    var toMs = function (v) { return typeof v === 'number' ? v : new Date(v).getTime(); };
+    send({ type: 'recorder/statistics_during_period', start_time: start, statistic_ids: ids, period: R.period, types: ['mean', 'min', 'max'], units: {} })
+      .then(function (res) {
+        var data = {}, missing = [];
+        ids.forEach(function (id) {
+          var rows = (res[id] || []).filter(function (p) { return p.mean != null; });
+          if (rows.length > 1) data[id] = rows.map(function (p) { return { t: toMs(p.start), v: p.mean, lo: p.min, hi: p.max }; });
+          else missing.push(id);
+        });
+        if (!missing.length) return data;
+        return send({ type: 'history/history_during_period', start_time: start, entity_ids: missing, minimal_response: true, no_attributes: true, significant_changes_only: false })
+          .then(function (h) {
+            missing.forEach(function (id) {
+              data[id] = (h[id] || []).map(function (p) { return { t: p.lu * 1000, v: parseFloat(p.s) }; }).filter(function (p) { return isFinite(p.v); });
+            });
+            return data;
+          });
+      })
+      .then(function (data) { statCache[key] = { at: Date.now(), data: data }; })
+      .catch(function () { statCache[key] = { at: Date.now(), data: {} }; })
+      .then(function () { delete statLoading[key]; queueRender(); });
+    return c ? c.data : null;
+  }
+
+  function chartsFor(ids, ctx, meta) {
+    var range = rangeOf(ctx), data = loadSeries(ids, range);
+    if (!data) return '<div class="cload">Verlauf wird geladen …</div>';
+    return ids.map(function (id) { return chart(data[id] || [], range, meta(id)); }).join('');
+  }
+
+  // Ein Messwert pro Diagramm (eine Achse), Band = Min/Max des Zeitabschnitts, Fadenkreuz mit Tooltip
+  function chart(pts, range, o) {
+    if (pts.length < 2) return '<div class="chart"><h4>' + esc(o.title) + '</h4><div class="cload">Noch keine Daten für diesen Zeitraum.</div></div>';
+    var t1 = Date.now(), t0 = t1 - RANGES[range].ms;
+    var lo = Infinity, hi = -Infinity;
+    pts.forEach(function (p) { lo = Math.min(lo, p.lo != null ? p.lo : p.v); hi = Math.max(hi, p.hi != null ? p.hi : p.v); });
+    var pad = Math.max((hi - lo) * 0.12, o.unit === '%' ? 2 : 0.3); lo -= pad; hi += pad;
+    var X = function (t) { return Math.max(0, Math.min(100, (t - t0) / (t1 - t0) * 100)); };
+    var Y = function (v) { return (hi - v) / (hi - lo) * 100; };
+    var line = pts.map(function (p) { return X(p.t).toFixed(2) + ',' + Y(p.v).toFixed(2); }).join(' ');
+    var band = '';
+    if (pts[0].lo != null) band = '<polygon points="' + pts.map(function (p) { return X(p.t).toFixed(2) + ',' + Y(p.hi).toFixed(2); }).join(' ') + ' '
+      + pts.slice().reverse().map(function (p) { return X(p.t).toFixed(2) + ',' + Y(p.lo).toFixed(2); }).join(' ') + '" fill="' + o.col + '" opacity=".14"></polygon>';
+    var ticks = [hi - pad, (hi + lo) / 2, lo + pad];
+    var f = function (v) { return o.dec ? fmt1(v) : String(Math.round(v)); };
+    var id = 'c' + (++chartSeq);
+    chartData[id] = { pts: pts, X: X, Y: Y, o: o, range: range, f: f };
+    var vals = pts.map(function (p) { return p.v; });
+    var xl = range === '24h' ? function (t) { return new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); }
+      : function (t) { return new Date(t).toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric' }); };
+    return '<div class="chart" style="--cc:' + o.col + '"><h4>' + esc(o.title) + '<span>Ø ' + f(vals.reduce(function (a, b) { return a + b; }, 0) / vals.length) + ' ' + o.unit
+      + ' · ' + f(Math.min.apply(null, vals)) + '–' + f(Math.max.apply(null, vals)) + ' ' + o.unit + '</span></h4>'
+      + '<div class="cgrid"><div class="yax">' + ticks.map(function (v) { return '<span style="top:' + Y(v) + '%">' + f(v) + '</span>'; }).join('') + '</div>'
+      + '<div class="plot" data-chart="' + id + '">' + ticks.map(function (v) { return '<div class="gl" style="top:' + Y(v) + '%"></div>'; }).join('')
+      + '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' + band
+      + '<polyline points="' + line + '" fill="none" stroke="' + o.col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline></svg></div>'
+      + '<div class="xax"><span>' + xl(t0) + '</span><span>' + xl((t0 + t1) / 2) + '</span><span>jetzt</span></div></div></div>';
+  }
+  function chartHover(plot, clientX) {
+    var d = chartData[plot.dataset.chart]; if (!d) return;
+    var rect = plot.getBoundingClientRect(), x = (clientX - rect.left) / rect.width * 100;
+    var best = d.pts[0];
+    d.pts.forEach(function (p) { if (Math.abs(d.X(p.t) - x) < Math.abs(d.X(best.t) - x)) best = p; });
+    var px = d.X(best.t), py = d.Y(best.v);
+    var when = d.range === '30d' ? new Date(best.t).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' })
+      : new Date(best.t).toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    var txt = when + ' · ' + d.f(best.v) + ' ' + d.o.unit + (best.lo != null && d.range !== '24h' ? ' (' + d.f(best.lo) + '–' + d.f(best.hi) + ')' : '');
+    var xh = plot.querySelector('.xh') || plot.appendChild(Object.assign(document.createElement('div'), { className: 'xh' }));
+    var xd = plot.querySelector('.xd') || plot.appendChild(Object.assign(document.createElement('div'), { className: 'xd' }));
+    var tip = plot.querySelector('.tip') || plot.appendChild(Object.assign(document.createElement('div'), { className: 'tip' }));
+    xh.style.left = px + '%'; xd.style.left = px + '%'; xd.style.top = py + '%';
+    tip.textContent = txt; tip.style.left = Math.max(18, Math.min(82, px)) + '%';
+  }
+  function chartLeave(plot) { plot.querySelectorAll('.xh,.xd,.tip').forEach(function (n) { n.remove(); }); }
+  document.addEventListener('pointermove', function (e) { var p = e.target.closest('.plot'); if (p) chartHover(p, e.clientX); });
+  document.addEventListener('pointerdown', function (e) { var p = e.target.closest('.plot'); if (p) chartHover(p, e.clientX); });
+  document.addEventListener('pointerout', function (e) { var p = e.target.closest && e.target.closest('.plot'); if (p && !p.contains(e.relatedTarget)) chartLeave(p); });
+
+  // ---------- Wetter ----------
+  function renderWeather(m) {
+    var w = m.weather;
+    $('weatherBox').hidden = !w;
+    if (!w) return;
+    if (weatherSubbed !== ws) subscribeWeather();
+    var a = w.attributes || {}, c = WEATHER[w.state] || ['🌡️', w.state];
+    var today = forecast[0];
+    var r = function (v) { return v == null ? '–' : Math.round(v); };
+    var html = '<div class="wnow"><span class="wi" aria-hidden="true">' + c[0] + '</span><span class="wt">' + r(a.temperature) + '°</span><div class="wd"><b>' + esc(c[1]) + '</b><small>'
+      + (today ? 'heute ' + r(today.templow) + '° bis ' + r(today.temperature) + '°' + (today.precipitation ? ' · ' + fmt1(today.precipitation) + ' mm' : '') + ' · ' : '')
+      + (a.humidity != null ? '💧 ' + r(a.humidity) + ' %' : '') + (a.wind_speed != null ? ' · 💨 ' + r(a.wind_speed) + ' ' + esc(a.wind_speed_unit || 'km/h') : '') + '</small></div></div>';
+    var days = forecast.slice(1, 6);
+    if (days.length) html += '<div class="wdays">' + days.map(function (d) {
+      var dc = WEATHER[d.condition] || ['🌡️', ''];
+      return '<div class="wday" title="' + esc(dc[1]) + '"><span>' + new Date(d.datetime).toLocaleDateString('de-DE', { weekday: 'short' }) + '</span><i aria-hidden="true">' + dc[0] + '</i><b>' + r(d.temperature) + '°</b> <small>' + r(d.templow) + '°</small>'
+        + (d.precipitation ? '<em>' + fmt1(d.precipitation) + ' mm</em>' : '') + '</div>';
+    }).join('') + '</div>';
+    $('weather').innerHTML = html;
+    $('weatherWhen').textContent = '';
+  }
+
+  // ---------- Heizung (climate-Entitäten, z. B. Heizkörperthermostate) ----------
+  var heatPending = {}, heatTimer = {};
+  function heatRow(s, roomName) {
+    var a = s.attributes || {}, id = s.entity_id, off = unavailable(s);
+    var target = heatPending[id] != null ? heatPending[id] : a.temperature;
+    var heating = a.hvac_action === 'heating';
+    var modes = (a.hvac_modes || []).filter(function (x) { return HVAC[x]; });
+    return '<div class="heat' + (heating ? ' on' : '') + '"><span aria-hidden="true">' + (heating ? '🔥' : '🌡️') + '</span><div class="txt"><b>' + esc(roomName ? shortName(s, roomName) : name(s)) + '</b><small>'
+      + (off ? 'nicht erreichbar' : (roomName ? esc(roomName) + ' · ' : '') + 'ist ' + (a.current_temperature != null ? fmt1(a.current_temperature) + ' °C' : '–') + (heating ? ' · heizt' : s.state === 'off' ? ' · aus' : '')) + '</small></div>'
+      + (target != null && s.state !== 'off' ? '<span class="stepper"><button type="button" data-heat="' + esc(id) + '" data-step="-1" aria-label="kälter">−</button><output>' + fmt1(target) + ' °</output><button type="button" data-heat="' + esc(id) + '" data-step="1" aria-label="wärmer">+</button></span>' : '')
+      + (modes.length > 1 ? '<div class="modes">' + modes.map(function (md) { return '<button class="chip" type="button" data-hvac="' + esc(id) + '" data-mode="' + md + '" aria-pressed="' + (s.state === md) + '">' + HVAC[md] + '</button>'; }).join('') + '</div>' : '')
+      + '</div>';
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-heat]');
+    if (b) {
+      var id = b.dataset.heat, s = S[id]; if (!s) return;
+      var a = s.attributes, step = a.target_temp_step || 0.5;
+      var cur = heatPending[id] != null ? heatPending[id] : a.temperature;
+      var v = Math.round((cur + step * +b.dataset.step) / step) * step;
+      v = Math.max(a.min_temp != null ? a.min_temp : 5, Math.min(a.max_temp != null ? a.max_temp : 30, v));
+      heatPending[id] = v; queueRender();
+      clearTimeout(heatTimer[id]);
+      heatTimer[id] = setTimeout(function () {
+        callService('climate', 'set_temperature', { temperature: v }, { entity_id: id }).catch(function () {})
+          .then(function () { setTimeout(function () { delete heatPending[id]; queueRender(); }, 1500); });
+      }, 700);
+      return;
+    }
+    var mb = e.target.closest('[data-hvac]');
+    if (mb) callService('climate', 'set_hvac_mode', { hvac_mode: mb.dataset.mode }, { entity_id: mb.dataset.hvac }).catch(function () {});
+  });
 
   // ---------- Kameras (Blink) ----------
   var camStamp = {};
@@ -611,6 +838,32 @@
       ? (boot ? 'Läuft seit ' + ago(boot.state) + ' · ' : '') + 'Home Assistant OS auf USB-SSD · LAN an der Fritzbox'
       : 'Für CPU, Speicher und SSD in HA die Integration „System Monitor“ hinzufügen (Einstellungen → Geräte & Dienste → Integration hinzufügen).';
 
+    var sysIds = [['CPU-Temperatur', find(/processor_temperature|prozessortemperatur/), '°C', 'var(--p1)', 0], ['CPU-Last', find(/processor_use|prozessornutzung|prozessorauslastung/), '%', 'var(--p1)', 0],
+      ['Arbeitsspeicher', find(/memory_use_percent|memory_usage|arbeitsspeicher.*(prozent|nutzung)|arbeitsspeicherauslastung/), '%', 'var(--cool)', 0]].filter(function (x) { return x[1]; });
+    $('sysChartBox').hidden = !sysIds.length;
+    if (sysIds.length && current === 'system') {
+      var metaById = {}; sysIds.forEach(function (x) { metaById[x[1].entity_id] = { title: x[0], unit: x[2], col: x[3], dec: x[4] }; });
+      $('sysChartBox').querySelector('.ranges').outerHTML = rangeChips('sys');
+      $('sysCharts').innerHTML = chartsFor(sysIds.map(function (x) { return x[1].entity_id; }), 'sys', function (id) { return metaById[id]; });
+    }
+
+    // Fritzbox (Integration „AVM FRITZ!Box Tools“)
+    var fz = m.fritz.slice().sort(function (a, b) { return (a.entity_id.indexOf('binary_') === 0 ? 0 : 1) - (b.entity_id.indexOf('binary_') === 0 ? 0 : 1) || name(a).localeCompare(name(b), 'de'); });
+    $('fritzCount').textContent = fz.length ? fz.length + ' Werte' : '';
+    $('fritz').innerHTML = fz.length ? '<div class="list vals">' + fz.map(function (x) {
+      var a = x.attributes || {}, v;
+      if (unavailable(x)) v = '–';
+      else if (x.entity_id.indexOf('binary_sensor.') === 0) v = x.state === 'on' ? '<span class="pill ok">ja</span>' : '<span class="pill">nein</span>';
+      else if (dc(x) === 'timestamp') v = 'seit ' + esc(ago(x.state));
+      else v = esc(isFinite(parseFloat(x.state)) && String(parseFloat(x.state)) === x.state ? (Math.round(parseFloat(x.state) * 10) / 10).toLocaleString('de-DE') : x.state) + (a.unit_of_measurement ? ' ' + esc(a.unit_of_measurement) : '');
+      return '<div class="row"><div class="txt"><b>' + esc(name(x)) + '</b></div><span class="v">' + v + '</span></div>';
+    }).join('') + '</div>'
+      : '<p class="hint" style="margin:0">Für Werte wie Internet-Geschwindigkeit, Verbindungsdauer und externe IP in HA die Integration „AVM FRITZ!Box Tools“ hinzufügen (Einstellungen → Geräte & Dienste → Integration hinzufügen, Adresse 192.168.188.1, Fritzbox-Benutzer und -Kennwort).</p>';
+
+    var integ = entries.filter(function (e) { return e.source !== 'ignore' && !e.disabled_by; }).length;
+    $('haStats').innerHTML = [['Version', haVersion || '–'], ['Integrationen', integ], ['Geräte', Object.keys(devices).length], ['Entitäten', Object.keys(S).length], ['Automationen', m.automations], ['Bereiche', Object.keys(areas).length]]
+      .map(function (x) { return '<div class="meter"><span>' + x[0] + '</span><b>' + esc(x[1]) + '</b></div>'; }).join('');
+
     // Dienste = Integrationen in HA
     var list = entries.filter(function (e) { return e.source !== 'ignore' && !e.disabled_by && !SVC_HIDE[e.domain]; })
       .sort(function (a, b) { return (a.state === 'loaded') - (b.state === 'loaded') || a.title.localeCompare(b.title, 'de'); });
@@ -669,23 +922,62 @@
       .then(function () { toast('Durchsage gesendet.'); inp.value = ''; }).catch(function () {});
   });
 
-  $('favBtn').addEventListener('click', function () {
-    var fav = lsGet(LS_FAV) || [], m = model(), groups = {};
-    m.scenes.forEach(function (sc) { var g = sc.room ? sc.room.name : 'Ohne Raum'; (groups[g] = groups[g] || []).push(sc); });
-    $('favList').innerHTML = Object.keys(groups).map(function (g) {
-      return '<h3>' + esc(g) + '</h3>' + groups[g].map(function (sc) {
-        var id = sc.s.entity_id;
-        return '<label><input type="checkbox" value="' + esc(id) + '"' + (fav.indexOf(id) > -1 ? ' checked' : '') + '>' + esc(name(sc.s)) + '</label>';
-      }).join('');
+  function favScenes() {
+    var list = lsGet(LS_SCENES);
+    if (!list) list = ['__off'].concat(lsGet(LS_FAV) || []); // erste Nutzung: bisherige Favoriten übernehmen, „Alles aus“ vorne
+    return list.filter(function (id) { return id === '__off' || S[id]; });
+  }
+  function sceneLabel(id) { return id === '__off' ? '⏻ Alles aus' : sceneIcon(name(S[id])) + ' ' + name(S[id]); }
+  function orderRows(list, label) {
+    return list.map(function (id, i) {
+      return '<div class="orow"><span class="n">' + esc(label(id)) + '</span>'
+        + '<button type="button" data-mv="-1" data-i="' + i + '" aria-label="nach oben"' + (i ? '' : ' disabled') + '>↑</button>'
+        + '<button type="button" data-mv="1" data-i="' + i + '" aria-label="nach unten"' + (i < list.length - 1 ? '' : ' disabled') + '>↓</button>'
+        + (label === sceneLabel ? '<button type="button" data-rm="' + i + '" aria-label="entfernen">✕</button>' : '') + '</div>';
     }).join('');
-    $('favDlg').showModal();
+  }
+  function move(list, i, d) { var j = i + d; if (j < 0 || j >= list.length) return list; var x = list[i]; list[i] = list[j]; list[j] = x; return list; }
+
+  function renderFavDlg() {
+    var fav = favScenes(), m = model(), groups = { 'Allgemein': fav.indexOf('__off') < 0 ? ['__off'] : [] };
+    m.scenes.forEach(function (sc) {
+      if (fav.indexOf(sc.s.entity_id) > -1) return;
+      var g = sc.room ? sc.room.name : 'Ohne Raum'; (groups[g] = groups[g] || []).push(sc.s.entity_id);
+    });
+    $('favOrder').innerHTML = orderRows(fav, sceneLabel) || '<div class="empty">Noch keine Szene gewählt.</div>';
+    $('favAdd').innerHTML = Object.keys(groups).filter(function (g) { return groups[g].length; }).map(function (g) {
+      return '<h3>' + esc(g) + '</h3>' + groups[g].map(function (id) { return '<button type="button" class="addrow" data-add="' + esc(id) + '"><b>＋</b>' + esc(sceneLabel(id)) + '</button>'; }).join('');
+    }).join('');
+  }
+  $('favBtn').addEventListener('click', function () { renderFavDlg(); $('favDlg').showModal(); });
+  $('favDlg').addEventListener('click', function (e) {
+    var fav = favScenes(), b;
+    if ((b = e.target.closest('[data-mv]'))) move(fav, +b.dataset.i, +b.dataset.mv);
+    else if ((b = e.target.closest('[data-rm]'))) fav.splice(+b.dataset.rm, 1);
+    else if ((b = e.target.closest('[data-add]'))) fav.push(b.dataset.add);
+    else return;
+    lsSet(LS_SCENES, fav); renderFavDlg(); queueRender();
   });
-  $('favList').addEventListener('change', function () {
-    var ids = []; this.querySelectorAll('input:checked').forEach(function (i) { ids.push(i.value); });
-    // Reihenfolge der bisherigen Favoriten beibehalten, neue hinten anhängen
-    var old = (lsGet(LS_FAV) || []).filter(function (id) { return ids.indexOf(id) > -1; });
-    ids.forEach(function (id) { if (old.indexOf(id) < 0) old.push(id); });
-    lsSet(LS_FAV, old); queueRender();
+
+  function renderRoomDlg() {
+    var rooms = model().rooms, byId = {};
+    rooms.forEach(function (r) { byId[r.id] = r; });
+    $('roomOrder').innerHTML = orderRows(rooms.map(function (r) { return r.id; }), function (id) { return byId[id].icon + ' ' + byId[id].name; });
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-roomorder]')) return;
+    renderRoomDlg(); $('roomDlg').showModal();
+  });
+  $('roomOrder').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-mv]'); if (!b) return;
+    var ids = model().rooms.map(function (r) { return r.id; });
+    lsSet(LS_ROOMS, move(ids, +b.dataset.i, +b.dataset.mv)); _model = null; renderRoomDlg(); queueRender();
+  });
+  $('roomReset').addEventListener('click', function () { lsSet(LS_ROOMS, null); _model = null; renderRoomDlg(); queueRender(); });
+
+  $('notesHead').addEventListener('click', function () {
+    var open = this.getAttribute('aria-expanded') !== 'true';
+    lsSet(LS_NOTES, open); this.setAttribute('aria-expanded', open); $('notes').hidden = !open;
   });
 
   // ---------- Licht-Dialog ----------
@@ -769,6 +1061,7 @@
     if (v !== 'system') lastView = v;
     document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.view === v); });
     $('sysBtn').setAttribute('aria-pressed', v === 'system');
+    if (connState === 'ok') queueRender();
     try { history.replaceState(null, '', '#' + v); } catch (e) {}
   }
   document.querySelector('.tabs').addEventListener('click', function (e) {
@@ -782,10 +1075,10 @@
 
   (function tick() {
     var d = new Date();
-    $('clock').textContent = d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })
-      + ' · ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    if (connState === 'ok') queueRender(); // „seit … min“ aktuell halten
-    setTimeout(tick, 30000);
+    $('clock').textContent = d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })
+      + ' · ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (connState === 'ok' && d.getSeconds() % 30 === 0) queueRender(); // „seit … min“ aktuell halten
+    setTimeout(tick, 1000 - d.getMilliseconds());
   })();
 
   show((location.hash || '').slice(1));

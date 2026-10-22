@@ -100,7 +100,7 @@
 
   /* Szenen */
   .scenes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-  .scene { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 4px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font-size: .74rem; font-weight: 700; color: var(--text); text-align: center; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+  .scene { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 4px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font-size: .74rem; font-weight: 700; color: var(--text); text-align: center; line-height: 1.25; min-width: 0; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word; }
   .scene i { font-style: normal; font-size: 1.3rem; line-height: 1; }
   .scene:hover { border-color: var(--p1); }
   .scene.active { border-color: var(--p1-line); background: var(--p1-soft); color: var(--ink); }
@@ -252,6 +252,106 @@
   @media (max-width: 420px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 360px) { .scenes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (prefers-reduced-motion: reduce) { .bar div { transition: none; } }
+  /* Uhr, Puls bei Live-Updates */
+  #clock { font-variant-numeric: tabular-nums; }
+  .conn.ok.pulse::before { animation: pulse .9s ease-out; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 currentColor; transform: scale(1.35); } 100% { box-shadow: 0 0 0 7px transparent; transform: scale(1); } }
+
+  /* Lage-Banner kompakt */
+  .status { padding: 9px 14px; gap: 10px; }
+  .status .big { font-size: 1.15rem; }
+  .status > div { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+  .status b { display: inline; font-size: .92rem; white-space: nowrap; }
+  .status small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+  /* einklappbare Box */
+  .fold { width: 100%; background: none; border: 0; padding: 0; text-align: left; margin-bottom: 0; align-items: center; }
+  .fold[aria-expanded="true"] { margin-bottom: 10px; }
+  .fold-r { display: inline-flex; align-items: center; gap: 8px; }
+  .chev { color: var(--mute); transition: transform .2s; display: inline-block; }
+  .fold[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+  .head-links { display: inline-flex; gap: 14px; }
+
+  /* Szenen: Alles aus hervorgehoben */
+  .scene.off { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .scene.off:hover { filter: brightness(1.15); border-color: var(--ink); }
+  .scenes.room { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  /* Lichter nach Raum */
+  .lgroup + .lgroup { margin-top: 14px; }
+  .glabel { margin: 0 0 6px; font-size: .74rem; font-weight: 800; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; display: flex; justify-content: space-between; }
+  .glabel span { text-transform: none; letter-spacing: 0; color: var(--p1); }
+
+  /* Raum-Kacheln */
+  .room-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+  .rtile { text-align: left; border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; box-shadow: var(--shadow); }
+  .rtile b { color: var(--ink); font-size: .86rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rtile i { font-style: normal; font-size: 1.2rem; line-height: 1.2; }
+  .rtile small { font-size: .72rem; font-weight: 700; color: var(--mute); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rtile:hover { border-color: var(--p1); }
+  .rtile[aria-pressed="true"] { background: var(--p1-soft); border-color: var(--p1); }
+  .rtile.alert { border-color: var(--danger); }
+  .rtile.alert small { color: var(--danger); }
+  .sub-h { margin: 4px 0 -4px; font-size: .74rem; font-weight: 800; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; }
+
+  /* Zeitraum-Auswahl und Diagramme */
+  .ranges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chart { margin-top: 12px; }
+  .chart h4 { margin: 0 0 4px; font-size: .78rem; font-weight: 800; color: var(--mute); display: flex; justify-content: space-between; gap: 8px; }
+  .chart h4 span { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cgrid { display: grid; grid-template-columns: 34px 1fr; }
+  .yax { position: relative; height: 120px; font-size: .66rem; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
+  .yax span { position: absolute; right: 6px; transform: translateY(-50%); }
+  .plot { position: relative; height: 120px; border-bottom: 1px solid var(--line); touch-action: pan-y; cursor: crosshair; }
+  .plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .plot .gl { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--line); }
+  .xax { grid-column: 2; display: flex; justify-content: space-between; font-size: .66rem; font-weight: 600; color: var(--mute); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .xh { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid var(--mute); pointer-events: none; }
+  .xd { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--cc); border: 2px solid var(--card); pointer-events: none; }
+  .tip { position: absolute; top: -6px; transform: translate(-50%, -100%); background: var(--ink); color: var(--bg); font-size: .72rem; font-weight: 700; padding: 5px 8px; border-radius: 8px; white-space: nowrap; pointer-events: none; z-index: 2; font-variant-numeric: tabular-nums; }
+  .cload { font-size: .8rem; color: var(--mute); font-weight: 600; padding: 20px 0; }
+
+  /* Wetter */
+  .wnow { display: flex; align-items: center; gap: 14px; }
+  .wnow .wi { font-size: 2.4rem; line-height: 1; }
+  .wnow .wt { font-size: 1.9rem; font-weight: 800; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+  .wnow .wd { min-width: 0; }
+  .wnow .wd b { display: block; color: var(--ink); font-size: .92rem; }
+  .wnow .wd small { display: block; color: var(--mute); font-size: .78rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .wdays { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+  .wday { text-align: center; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 2px; font-variant-numeric: tabular-nums; min-width: 0; }
+  .wday span { display: block; font-size: .72rem; font-weight: 800; color: var(--mute); }
+  .wday i { display: block; font-style: normal; font-size: 1.2rem; line-height: 1.5; }
+  .wday b { font-size: .8rem; color: var(--ink); }
+  .wday small { font-size: .74rem; color: var(--mute); font-weight: 600; }
+  .wday em { display: block; font-style: normal; font-size: .66rem; font-weight: 700; color: var(--cool); }
+
+  /* Heizung */
+  .heat-list { display: grid; gap: 8px; }
+  .heat { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); flex-wrap: wrap; }
+  .heat.on { background: var(--p1-soft); border-color: var(--p1-line); }
+  .heat .txt { flex: 1; min-width: 120px; }
+  .heat b { display: block; font-size: .88rem; color: var(--ink); }
+  .heat small { display: block; font-size: .76rem; color: var(--mute); font-variant-numeric: tabular-nums; }
+  .stepper { display: inline-flex; align-items: center; gap: 4px; }
+  .stepper button { width: 34px; height: 34px; border-radius: 10px; border: 2px solid var(--line); background: var(--card); font-weight: 800; font-size: 1.1rem; line-height: 1; color: var(--ink); }
+  .stepper button:hover { border-color: var(--p1); }
+  .stepper output { min-width: 58px; text-align: center; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; }
+  .modes .chip { padding: 4px 11px; font-size: .74rem; }
+
+  /* Sortier-Listen */
+  .order-list { display: grid; gap: 6px; margin-bottom: 8px; }
+  .orow { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+  .orow .n { flex: 1; min-width: 0; font-weight: 700; font-size: .88rem; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .orow button { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); font-weight: 800; color: var(--ink); }
+  .orow button:hover { border-color: var(--p1); }
+  .fav-list .addrow { display: flex; align-items: center; gap: 10px; padding: 6px 4px; width: 100%; background: none; border: 0; text-align: left; font-weight: 600; font-size: .9rem; color: var(--ink); }
+  .fav-list .addrow b { color: var(--p1); width: 18px; }
+  .chips.wrap { flex-wrap: wrap; overflow: visible; }
+  .vals .row b { display: inline; }
+  .vals .row .v { font-weight: 800; color: var(--ink); font-size: .88rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) { .conn.ok.pulse::before { animation: none; } .chev { transition: none; } }
 </style>
 </head>
 <body>
@@ -285,30 +385,40 @@
 
     <div class="stats" aria-label="Übersicht">
       <div class="stat"><b id="sLights">–</b><span>Lichter an</span></div>
+      <div class="stat" id="sOpenBox"><b id="sOpen">–</b><span>Fenster/Türen offen</span></div>
       <div class="stat"><b id="sTemp">–</b><span>Innen Ø</span></div>
       <div class="stat"><b id="sHum">–</b><span>Feuchte Ø</span></div>
-      <div class="stat" id="sOpenBox"><b id="sOpen">–</b><span>Offen</span></div>
     </div>
 
+    <section class="box" id="weatherBox" hidden>
+      <div class="box-head"><h2>Wetter Straubing</h2><span class="count" id="weatherWhen"></span></div>
+      <div id="weather"></div>
+    </section>
+
+    <section class="box" id="heatBox" hidden>
+      <div class="box-head"><h2>Heizung</h2><span class="count" id="heatCount"></span></div>
+      <div class="heat-list" id="heat"></div>
+    </section>
+
     <section class="box">
-      <div class="box-head"><h2>Hinweise</h2><span class="count" id="noteCount"></span></div>
+      <button class="box-head fold" type="button" id="notesHead" aria-expanded="true" aria-controls="notes"><h2>Hinweise</h2><span class="fold-r"><span class="count" id="noteCount"></span><span class="chev" aria-hidden="true">▾</span></span></button>
       <div class="notes" id="notes"></div>
     </section>
 
     <section class="box">
-      <div class="box-head"><h2>Szenen</h2><button class="link-btn" type="button" id="favBtn">Auswählen</button></div>
+      <div class="box-head"><h2>Szenen</h2><button class="link-btn" type="button" id="favBtn">Bearbeiten</button></div>
       <div class="scenes" id="scenes"></div>
     </section>
 
     <section class="box">
-      <div class="box-head"><h2>Lichter</h2><button class="link-btn" type="button" id="allOff">Alle aus</button></div>
-      <div class="lights" id="lights"></div>
+      <div class="box-head"><h2>Lichter</h2><span class="head-links"><button class="link-btn" type="button" data-roomorder>Räume sortieren</button><button class="link-btn" type="button" id="allOff">Alle aus</button></span></div>
+      <div id="lights"></div>
       <p class="hint">Tippen schaltet, lange drücken für Helligkeit und Farbe.</p>
     </section>
 
     <section class="box" id="sayBox" hidden>
       <div class="box-head"><h2>Durchsage an die Echos</h2></div>
-      <div class="chips" id="targets"></div>
+      <div class="chips wrap" id="targets"></div>
       <form class="say" id="sayForm">
         <input type="text" id="sayText" placeholder="z. B. Essen ist fertig!" aria-label="Text der Durchsage">
         <button class="btn" type="submit">Senden</button>
@@ -318,7 +428,9 @@
 
   <!-- Räume -->
   <section id="view-raeume" class="view" hidden>
-    <div class="rooms" id="rooms"></div>
+    <div class="room-tiles" id="roomTiles"></div>
+    <div id="roomDetail"></div>
+    <button class="link-btn foot" type="button" data-roomorder>Reihenfolge der Räume ändern</button>
   </section>
 
   <!-- Kameras -->
@@ -335,6 +447,22 @@
       <div class="box-head"><h2>Raspberry Pi 4</h2><span class="pill" id="haVersion"></span></div>
       <div class="kv" id="pi"></div>
       <p class="hint" id="piHint"></p>
+    </section>
+
+    <section class="box" id="sysChartBox" hidden>
+      <div class="box-head"><h2>Verlauf Raspberry Pi</h2></div>
+      <div class="ranges" data-range="sys"></div>
+      <div id="sysCharts"></div>
+    </section>
+
+    <section class="box">
+      <div class="box-head"><h2>Fritzbox</h2><span class="count" id="fritzCount"></span></div>
+      <div id="fritz"></div>
+    </section>
+
+    <section class="box">
+      <div class="box-head"><h2>Home Assistant</h2></div>
+      <div class="kv" id="haStats"></div>
     </section>
 
     <section class="box">
@@ -392,10 +520,20 @@
 
 <dialog id="favDlg">
   <form method="dialog">
-    <h2>Szenen für die Übersicht</h2>
-    <p class="dsub">Hake an, welche Szenen vorne als Knöpfe erscheinen. Wird nur auf diesem Gerät gespeichert.</p>
-    <div class="fav-list" id="favList"></div>
+    <h2>Szenen auf der Übersicht</h2>
+    <p class="dsub">Mit ↑ ↓ sortieren, mit ✕ entfernen, unten neue hinzufügen. Wird nur auf diesem Gerät gespeichert.</p>
+    <div class="order-list" id="favOrder"></div>
+    <div class="fav-list" id="favAdd"></div>
     <div class="acts"><button class="btn" value="close">Fertig</button></div>
+  </form>
+</dialog>
+
+<dialog id="roomDlg">
+  <form method="dialog">
+    <h2>Reihenfolge der Räume</h2>
+    <p class="dsub">Gilt für die Lichter auf der Übersicht und die Räume-Ansicht. Wird nur auf diesem Gerät gespeichert.</p>
+    <div class="order-list" id="roomOrder"></div>
+    <div class="acts"><button class="btn ghost" type="button" id="roomReset">Zurücksetzen</button><button class="btn" value="close">Fertig</button></div>
   </form>
 </dialog>
 
