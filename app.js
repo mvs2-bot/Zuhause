@@ -284,13 +284,14 @@
       var a = areas[id];
       roomMap[id] = { id: id, name: a.name, icon: ROOM_ICON[a.name.toLowerCase()] || '🚪', lights: [], temps: [], hums: [], contacts: [], motions: [], cams: [], scenes: [], echos: [], climates: [], buttons: {} };
     });
-    var m = { rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], weather: null, fritz: [], automations: 0, batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
+    var m = { rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], heatTpl: [], weather: null, fritz: [], automations: 0, batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
 
     Object.keys(S).forEach(function (id) {
       var s = S[id], dom = id.split('.')[0], e = reg(id), r = roomMap[areaOf(id)] || null;
       if (e.platform === 'systemmonitor') m.sys[id] = s;
       if (e.platform === 'fritz' && /^(sensor|binary_sensor)$/.test(dom) && visible(id)) m.fritz.push(s);
       if (dom === 'automation') m.automations++;
+      if (dom === 'button' && e.platform === 'fritzbox' && visible(id)) m.heatTpl.push(s); // FRITZ!SmartHome-Heizungsvorlagen
       if (dom === 'weather' && !m.weather) m.weather = s;
       if (dom === 'sensor' && dc(s) === 'battery' && visible(id) && e.device) m.batteries[e.device] = s;
       if (dom === 'sensor' && /_lqi$/.test(id) && e.device) m.lqi[e.device] = s;
@@ -471,9 +472,12 @@
     }).join('') || '<div class="empty">Keine Szenen gewählt.</div>';
 
     renderWeather(m);
-    $('heatBox').hidden = !m.climates.length;
-    if (m.climates.length) {
-      $('heat').innerHTML = m.climates.map(function (c) { return heatRow(c.s, c.room ? c.room.name : ''); }).join('');
+    $('heatBox').hidden = !m.climates.length && !m.heatTpl.length;
+    if (m.climates.length || m.heatTpl.length) {
+      $('heat').innerHTML = m.climates.map(function (c) { return heatRow(c.s, c.room ? c.room.name : ''); }).join('')
+        + (m.heatTpl.length ? '<h3 class="sub-h">Vorlagen</h3><div class="scenes room">' + m.heatTpl.slice().sort(function (a, b) { return name(a).localeCompare(name(b), 'de'); }).map(function (b) {
+          return '<button class="scene" type="button" data-press="' + esc(b.entity_id) + '"' + (unavailable(b) && b.state === 'unavailable' ? ' disabled' : '') + '><i>🌡️</i>' + esc(name(b)) + '</button>';
+        }).join('') + '</div>' : '');
       var heating = m.climates.filter(function (c) { return c.s.attributes.hvac_action === 'heating'; }).length;
       $('heatCount').textContent = heating ? heating + ' heizt' : '';
     }
@@ -751,6 +755,8 @@
       }, 700);
       return;
     }
+    var pb = e.target.closest('[data-press]');
+    if (pb) { callService('button', 'press', {}, { entity_id: pb.dataset.press }).then(function () { toast((S[pb.dataset.press] ? name(S[pb.dataset.press]) : 'Vorlage') + ' angewendet.'); }).catch(function () {}); return; }
     var mb = e.target.closest('[data-hvac]');
     if (mb) callService('climate', 'set_hvac_mode', { hvac_mode: mb.dataset.mode }, { entity_id: mb.dataset.hvac }).catch(function () {});
   });
