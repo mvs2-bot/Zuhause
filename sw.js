@@ -1,12 +1,13 @@
 /* Zuhause – Service Worker
-   - Eigene Dateien: erst Netz (max. 4 s), sonst gespeicherte Version → Updates kommen sofort an
+   - Eigene Dateien: erst Netz (max. 4 s, am Browser-Cache vorbei), sonst gespeicherte Version → Updates kommen sofort an
+   - app.js wird mit ?v=N eingebunden, damit index.html und app.js nie aus verschiedenen Versionen stammen
    - Schriften: aus dem Speicher
    - Home Assistant (WebSocket, Kamerabilder) wird NIE gespeichert, das läuft direkt am Service Worker vorbei */
-const P="zuhause-",V=P+"v8";
-const CORE=['./','index.html','app.js','shared/ios-nav.js','manifest.json','icon.svg','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','icons/favicon-32.png'];
+const P="zuhause-",V=P+"v9";
+const CORE=['./','index.html','app.js?v=9','shared/ios-nav.js','manifest.json','icon.svg','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','icons/favicon-32.png'];
 const EXTRA=["https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"];
 const CDN=/fonts\.googleapis\.com|fonts\.gstatic\.com/;
-self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(V);await c.addAll(CORE);await Promise.allSettled(EXTRA.map(u=>c.add(u)));await self.skipWaiting();})());});
+self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(V);await c.addAll(CORE.map(u=>new Request(u,{cache:'reload'})));await Promise.allSettled(EXTRA.map(u=>c.add(u)));await self.skipWaiting();})());});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith(P)&&k!==V)await caches.delete(k);await self.clients.claim();})());});
 self.addEventListener('fetch',e=>{
   const r=e.request;if(r.method!=='GET')return;
@@ -20,7 +21,7 @@ async function handle(r,s){
   const c=await caches.open(V);
   const nav=r.mode==='navigate';
   const hit=await c.match(r,{ignoreSearch:nav});
-  const net=()=>fetch(r).then(async res=>{if(res.ok||res.type==='opaque')await c.put(r,res.clone());return res;});
+  const net=()=>fetch(s==='nf'?new Request(r.url,{cache:'no-cache',credentials:'same-origin'}):r).then(async res=>{if(res.ok||res.type==='opaque')await c.put(r,res.clone());return res;});
   if(s==='cf')return hit||net();
   try{return await Promise.race([net(),new Promise((_,j)=>setTimeout(j,4000))]);}
   catch(_){return hit||(nav?await c.match('index.html'):null)||Response.error();}

@@ -32,4 +32,4 @@ Nichts ist fest verdrahtet: Räume, Lampen, Sensoren und Kameras kommen aus den 
 | `manifest.json`, `icon.svg`, `icons/` | PWA |
 | `shared/ios-nav.js` | Zurück/Neu-laden-Leiste für iOS (Kopie aus mvs2-bot.github.io) |
 
-Bei Änderungen an App-Dateien die Cache-Version in `sw.js` (`V=P+"vN"`) hochzählen.
+Bei Änderungen an App-Dateien die Cache-Version in `sw.js` (`V=P+"vN"`) und die Version `app.js?v=N` in `index.html` und `sw.js` hochzählen.
