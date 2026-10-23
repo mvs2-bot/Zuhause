@@ -3,8 +3,8 @@
    - app.js wird mit ?v=N eingebunden, damit index.html und app.js nie aus verschiedenen Versionen stammen
    - Schriften: aus dem Speicher
    - Home Assistant (WebSocket, Kamerabilder) wird NIE gespeichert, das läuft direkt am Service Worker vorbei */
-const P="zuhause-",V=P+"v10";
-const CORE=['./','index.html','app.js?v=10','shared/ios-nav.js','manifest.json','icon.svg','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','icons/favicon-32.png'];
+const P="zuhause-",V=P+"v11";
+const CORE=['./','index.html','app.js?v=11','shared/ios-nav.js','manifest.json','icon.svg','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','icons/favicon-32.png'];
 const EXTRA=["https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"];
 const CDN=/fonts\.googleapis\.com|fonts\.gstatic\.com/;
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(V);await c.addAll(CORE.map(u=>new Request(u,{cache:'reload'})));await Promise.allSettled(EXTRA.map(u=>c.add(u)));await self.skipWaiting();})());});

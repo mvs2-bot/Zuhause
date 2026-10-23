@@ -53,6 +53,7 @@
   :focus-visible { outline: 3px solid var(--p1); outline-offset: 2px; }
   .wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
   .view { display: flex; flex-direction: column; gap: 18px; }
+  #auto { display: flex; flex-direction: column; gap: 18px; }
 
   header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); padding-block: 14px 12px;
     border-bottom: 3px solid var(--p1); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -333,6 +334,25 @@
   .heat .txt { flex: 1; min-width: 120px; }
   .heat b { display: block; font-size: .88rem; color: var(--ink); }
   .heat small { display: block; font-size: .76rem; color: var(--mute); font-variant-numeric: tabular-nums; }
+  /* Automationen und Einstellungen */
+  .arow { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .arow:first-of-type { border-top: 0; }
+  .arow .txt { flex: 1; min-width: 0; }
+  .arow .txt b { display: block; font-size: .95rem; }
+  .arow .txt small { display: block; color: var(--mute); font-size: .78rem; line-height: 1.4; }
+  .arow.off .txt b { color: var(--mute); }
+  .ctl { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .ctl input[type=time], .ctl input[type=date], .ctl select, .ctl input[type=text] { font: inherit; font-weight: 700; padding: 8px 10px; min-height: 44px; border-radius: 12px; border: 2px solid var(--line); background: var(--card); color: var(--ink); }
+  .ctl input[type=text] { width: 9rem; }
+  .numv { min-width: 4.2rem; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .arow .range { width: 100%; margin-top: 6px; accent-color: var(--p1); }
+  .agrp { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); margin: 14px 0 0; }
+  .tgl { position: relative; width: 52px; height: 32px; border-radius: 99px; border: 0; background: var(--line); flex-shrink: 0; cursor: pointer; transition: background .2s; }
+  .tgl::after { content: ""; position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+  .tgl[aria-checked="true"] { background: var(--p1); }
+  .tgl[aria-checked="true"]::after { transform: translateX(20px); }
+  .tgl:disabled { opacity: .45; }
+  .tgl::before { content: ""; position: absolute; inset: -6px; } /* Trefferfläche 44 px */
   .stepper { display: inline-flex; align-items: center; gap: 4px; }
   .stepper button { width: 34px; height: 34px; border-radius: 10px; border: 2px solid var(--line); background: var(--card); font-weight: 800; font-size: 1.1rem; line-height: 1; color: var(--ink); }
   .stepper button:hover { border-color: var(--p1); }
@@ -554,6 +574,10 @@
   </section>
 
   <!-- Saugroboter -->
+  <section id="view-automationen" class="view" hidden>
+    <div id="auto"><section class="box empty">Noch keine Automationen in Home Assistant.</section></div>
+  </section>
+
   <section id="view-sauger" class="view" hidden>
     <section class="box" id="vacBox">
       <div class="box-head"><h2>🤖 Saugroboter</h2><span class="count" id="vacCount"></span></div>
@@ -688,6 +712,7 @@
     <button type="button" data-go="fenster"><i>🪟</i>Fenster &amp; Türen</button>
     <button type="button" data-go="kameras"><i>📷</i>Kameras</button>
     <button type="button" data-go="sauger"><i>🤖</i>Saugroboter</button>
+    <button type="button" data-go="automationen"><i>⚡</i>Automationen</button>
     <button type="button" data-go="system"><i>⚙️</i>System</button>
   </div>
   <button type="button" class="menu-wide" data-arrange>↕ Bereiche der Übersicht anordnen</button>
@@ -700,7 +725,7 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 <script src="shared/ios-nav.js" data-bottom="84" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });

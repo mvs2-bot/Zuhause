@@ -285,13 +285,15 @@
       var a = areas[id];
       roomMap[id] = { id: id, name: a.name, icon: ROOM_ICON[a.name.toLowerCase()] || '🚪', lights: [], temps: [], hums: [], contacts: [], motions: [], cams: [], scenes: [], echos: [], climates: [], buttons: {} };
     });
-    var m = { rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], heatTpl: [], vacuums: [], spotify: null, weather: null, fritz: [], automations: 0, batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
+    var m = { rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], heatTpl: [], vacuums: [], spotify: null, weather: null, fritz: [], automations: 0, autos: [], scripts: [], helpers: [], batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
 
     Object.keys(S).forEach(function (id) {
       var s = S[id], dom = id.split('.')[0], e = reg(id), r = roomMap[areaOf(id)] || null;
       if (e.platform === 'systemmonitor') m.sys[id] = s;
       if (e.platform === 'fritz' && /^(sensor|binary_sensor)$/.test(dom) && visible(id)) m.fritz.push(s);
-      if (dom === 'automation') m.automations++;
+      if (dom === 'automation') { m.automations++; if (visible(id)) m.autos.push(s); }
+      if (dom === 'script' && visible(id)) m.scripts.push(s);
+      if (/^input_(number|boolean|datetime|select|text)$/.test(dom) && visible(id)) m.helpers.push(s);
       if (dom === 'button' && e.platform === 'fritzbox' && visible(id)) m.heatTpl.push(s); // FRITZ!SmartHome-Heizungsvorlagen
       if (dom === 'weather' && !m.weather) m.weather = s;
       if (dom === 'sensor' && dc(s) === 'battery' && visible(id) && e.device) m.batteries[e.device] = s;
@@ -353,6 +355,7 @@
     if (connState !== 'ok' && !Object.keys(S).length) return;
     var m = model();
     renderOverview(m); renderRooms(m); renderCams(m); renderSystem(m);
+    if (current === 'automationen') renderAutos(m);
     if (DETAIL[current]) { detailKey = current; renderDetail(m); }
   }
 
@@ -947,6 +950,113 @@
     $('weather').innerHTML = html;
   }
 
+  // ---------- Automationen ein/aus und ihre Einstellungen (Helfer input_*) ----------
+  // Gruppe = Text vor dem Doppelpunkt im Namen, z. B. „Lüften: Feuchte-Grenze“ gehört zu „Lüften: Hinweis bei hoher Feuchte“
+  var autoDesc = {};
+  function splitName(s) {
+    var n = name(s), i = n.indexOf(':');
+    return i > 0 ? { g: n.slice(0, i).trim(), n: n.slice(i + 1).trim() } : { g: '', n: n };
+  }
+  function helperCtl(s) {
+    var d = s.entity_id.split('.')[0], a = s.attributes || {}, id = esc(s.entity_id), off = unavailable(s);
+    var dis = off ? ' disabled' : '', lbl = ' aria-label="' + esc(name(s)) + '"';
+    if (d === 'input_boolean') return { ctl: '<button class="tgl" type="button" role="switch" aria-checked="' + (s.state === 'on') + '" data-hlp="' + id + '"' + dis + lbl + '></button>' };
+    if (d === 'input_select') return { ctl: '<select data-hlp="' + id + '"' + dis + lbl + '>' + (a.options || []).map(function (o) { return '<option' + (o === s.state ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select>' };
+    if (d === 'input_text') return { ctl: '<input type="text" data-hlp="' + id + '" value="' + esc(s.state) + '" maxlength="' + (a.max || 100) + '"' + dis + lbl + '>' };
+    if (d === 'input_datetime') {
+      var t = (s.state || '').split(' '), date = a.has_date ? t[0] : '', time = a.has_time ? (a.has_date ? t[1] : t[0]) : '';
+      return { ctl: (a.has_date ? '<input type="date" data-hlp="' + id + '" data-part="date" value="' + esc(date) + '"' + dis + lbl + '>' : '')
+        + (a.has_time ? '<input type="time" data-hlp="' + id + '" data-part="time" value="' + esc((time || '').slice(0, 5)) + '"' + dis + lbl + '>' : '') };
+    }
+    // input_number: − Wert + und darunter ein Schieberegler
+    var v = num(s), step = a.step || 1, dec = (String(step).split('.')[1] || '').length, unit = a.unit_of_measurement ? ' ' + esc(a.unit_of_measurement) : '';
+    var shown = v == null ? '–' : v.toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + unit;
+    return {
+      ctl: '<span class="stepper"><button type="button" data-num="' + id + '" data-d="-1" aria-label="weniger"' + dis + '>−</button><span class="numv" aria-live="polite">' + shown + '</span><button type="button" data-num="' + id + '" data-d="1" aria-label="mehr"' + dis + '>+</button></span>',
+      below: '<input class="range" type="range" data-hlp="' + id + '" min="' + a.min + '" max="' + a.max + '" step="' + step + '" value="' + (v == null ? a.min : v) + '"' + dis + lbl + '>'
+    };
+  }
+  function renderAutos(m) {
+    var el = $('auto'), fa = document.activeElement;
+    // nicht neu zeichnen, während jemand gerade tippt oder schiebt
+    if (fa && el.contains(fa) && /^(INPUT|SELECT)$/.test(fa.tagName)) return;
+    if (!m.autos.length && !m.helpers.length && !m.scripts.length) { el.innerHTML = '<section class="box empty">Noch keine Automationen in Home Assistant.</section>'; return; }
+    var groups = {}, order = [];
+    function grp(g) { if (!groups[g]) { groups[g] = { autos: [], scripts: [], helpers: [] }; order.push(g); } return groups[g]; }
+    m.autos.slice().sort(function (a, b) { return name(a).localeCompare(name(b), 'de'); }).forEach(function (s) { grp(splitName(s).g).autos.push(s); });
+    m.scripts.slice().sort(function (a, b) { return name(a).localeCompare(name(b), 'de'); }).forEach(function (s) { grp(splitName(s).g).scripts.push(s); });
+    m.helpers.slice().sort(function (a, b) { return name(a).localeCompare(name(b), 'de'); }).forEach(function (s) { grp(splitName(s).g).helpers.push(s); });
+    order.sort(function (a, b) { return (!a) - (!b) || a.localeCompare(b, 'de'); });
+    var on = m.autos.filter(function (s) { return s.state === 'on'; }).length;
+    var html = '<section class="box"><div class="box-head"><h2>⚡ Automationen</h2><span class="count">' + on + ' von ' + m.autos.length + ' aktiv</span></div>'
+      + '<p class="hint" style="margin:0">Ausgeschaltete Automationen laufen nicht mehr, bis du sie wieder einschaltest. Werte darunter gelten sofort.</p></section>';
+    order.forEach(function (g) {
+      var G = groups[g];
+      html += '<section class="box"><div class="box-head"><h2>' + esc(g || (G.autos.length || G.scripts.length ? 'Weitere Automationen' : 'Weitere Einstellungen')) + '</h2></div>';
+      G.autos.forEach(function (s) {
+        var a = s.attributes || {}, isOn = s.state === 'on', off = unavailable(s), sub = [];
+        if (autoDesc[s.entity_id] === undefined && a.id) {
+          autoDesc[s.entity_id] = '';
+          send({ type: 'automation/config', entity_id: s.entity_id }).then(function (r) { var c = r && (r.config || r); autoDesc[s.entity_id] = (c && c.description) || ''; if (autoDesc[s.entity_id]) queueRender(); }).catch(function () {});
+        }
+        if (autoDesc[s.entity_id]) sub.push(esc(autoDesc[s.entity_id]));
+        sub.push(off ? 'nicht verfügbar' : a.last_triggered ? 'zuletzt ausgelöst ' + esc(timeText(a.last_triggered)) : 'noch nie ausgelöst');
+        html += '<div class="arow' + (isOn ? '' : ' off') + '"><div class="txt"><b>' + esc(g ? splitName(s).n : name(s)) + '</b><small>' + sub.join('<br>') + '</small></div>'
+          + '<button class="tgl" type="button" role="switch" aria-checked="' + isOn + '" data-auto="' + esc(s.entity_id) + '" aria-label="' + esc(name(s)) + (isOn ? ' ausschalten' : ' einschalten') + '"' + (off ? ' disabled' : '') + '></button></div>';
+      });
+      G.scripts.forEach(function (s) {
+        var run = s.state === 'on', off = unavailable(s), a = s.attributes || {};
+        html += '<div class="arow"><div class="txt"><b>' + esc(g ? splitName(s).n : name(s)) + '</b><small>' + (run ? 'läuft gerade' : a.last_triggered ? 'zuletzt ' + esc(timeText(a.last_triggered)) : 'Ablauf auf Knopfdruck') + '</small></div>'
+          + '<button class="btn small" type="button" data-script="' + esc(s.entity_id) + '"' + (off || run ? ' disabled' : '') + '>▶ Ausführen</button></div>';
+      });
+      if (G.helpers.length && (G.autos.length || G.scripts.length)) html += '<h3 class="agrp">Einstellungen</h3>';
+      G.helpers.forEach(function (s) {
+        var c = helperCtl(s);
+        html += '<div class="arow" style="flex-wrap:wrap"><div class="txt"><b>' + esc(g ? splitName(s).n : name(s)) + '</b></div><div class="ctl">' + c.ctl + '</div>' + (c.below ? c.below : '') + '</div>';
+      });
+      html += '</section>';
+    });
+    el.innerHTML = html;
+  }
+  function setHelper(id, val, part) {
+    var d = id.split('.')[0], s = S[id] || {}, a = s.attributes || {};
+    if (d === 'input_number') return callService('input_number', 'set_value', { value: val }, { entity_id: id });
+    if (d === 'input_select') return callService('input_select', 'select_option', { option: val }, { entity_id: id });
+    if (d === 'input_text') return callService('input_text', 'set_value', { value: val }, { entity_id: id });
+    if (d === 'input_datetime') {
+      if (!val) return;
+      if (a.has_date && a.has_time) {
+        var t = (s.state || '').split(' '), date = part === 'date' ? val : t[0], time = part === 'time' ? val + ':00' : t[1];
+        return callService('input_datetime', 'set_datetime', { datetime: date + ' ' + time }, { entity_id: id });
+      }
+      return callService('input_datetime', 'set_datetime', part === 'date' ? { date: val } : { time: val + ':00' }, { entity_id: id });
+    }
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-auto]');
+    if (t) { var isOn = t.getAttribute('aria-checked') === 'true'; t.setAttribute('aria-checked', !isOn); callService('automation', isOn ? 'turn_off' : 'turn_on', {}, { entity_id: t.dataset.auto }); return; }
+    var sc = e.target.closest('[data-script]');
+    if (sc) { callService('script', 'turn_on', {}, { entity_id: sc.dataset.script }).then(function () { toast('Gestartet'); }); return; }
+    var b = e.target.closest('.tgl[data-hlp]');
+    if (b) { b.setAttribute('aria-checked', b.getAttribute('aria-checked') !== 'true'); callService('input_boolean', 'toggle', {}, { entity_id: b.dataset.hlp }); return; }
+    var n = e.target.closest('[data-num]');
+    if (n) {
+      var s = S[n.dataset.num], a = s.attributes, step = a.step || 1, v = num(s);
+      v = Math.min(a.max, Math.max(a.min, Math.round(((v == null ? a.min : v) + step * n.dataset.d) / step) * step));
+      setHelper(n.dataset.num, +v.toFixed(6));
+    }
+  });
+  document.addEventListener('input', function (e) {
+    var r = e.target.closest('.range[data-hlp]'); if (!r) return;
+    var s = S[r.dataset.hlp], a = s.attributes || {}, dec = (String(a.step || 1).split('.')[1] || '').length;
+    r.parentNode.querySelector('.numv').textContent = (+r.value).toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + (a.unit_of_measurement ? ' ' + a.unit_of_measurement : '');
+  });
+  document.addEventListener('change', function (e) {
+    var h = e.target.closest('#auto [data-hlp]'); if (!h || h.classList.contains('tgl')) return;
+    var val = h.type === 'range' ? +h.value : h.value;
+    Promise.resolve(setHelper(h.dataset.hlp, val, h.dataset.part)).then(function () { h.blur(); toast('Gespeichert'); }).catch(function () { h.blur(); queueRender(); });
+  });
+
   // ---------- Heizung (climate-Entitäten, z. B. Heizkörperthermostate) ----------
   var heatPending = {}, heatTimer = {};
   function heatRow(s, roomName) {
@@ -1278,7 +1388,7 @@
   // ---------- Ansichten ----------
   // Routen: jede Seite hat einen eigenen Eintrag im Verlauf, damit „Zurück“ in der App zur vorigen Seite geht statt sie zu schließen
   var DETAIL = { lichter: 1, fenster: 1, klima: 1 };
-  var views = ['uebersicht', 'raeume', 'kameras', 'sauger', 'system', 'detail'], current = 'uebersicht', lastView = 'uebersicht';
+  var views = ['uebersicht', 'raeume', 'kameras', 'sauger', 'automationen', 'system', 'detail'], current = 'uebersicht', lastView = 'uebersicht';
   function show(v) {
     if (views.indexOf(v) < 0 && !DETAIL[v]) v = 'uebersicht';
     current = v;
