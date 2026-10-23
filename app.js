@@ -7,7 +7,7 @@
 
   var DEFAULT_URL = 'https://homeassistant.taildd4a66.ts.net';
   var LS_CONN = 'zuhause-ha', LS_FAV = 'zuhause-fav-scenes', LS_SCENES = 'zuhause-scenes', LS_ROOMS = 'zuhause-room-order',
-    LS_ROOM = 'zuhause-room', LS_NOTES = 'zuhause-notes-open', LS_RANGE = 'zuhause-range-', LS_FOLD = 'zuhause-fold', LS_SPEAKER = 'zuhause-speaker';
+    LS_ROOM = 'zuhause-room', LS_NOTES = 'zuhause-notes-open', LS_RANGE = 'zuhause-range-', LS_FOLD = 'zuhause-fold', LS_SPEAKER = 'zuhause-speaker', LS_BOARD = 'zuhause-board';
 
   // Reihenfolge und Symbole der Räume (HA-Bereichsnamen); unbekannte Bereiche kommen alphabetisch dahinter
   var ROOM_ORDER = ['wohnzimmer', 'küche', 'schlafzimmer', 'büro', 'badezimmer', 'flur', 'toilette', 'keller'];
@@ -353,7 +353,7 @@
     if (connState !== 'ok' && !Object.keys(S).length) return;
     var m = model();
     renderOverview(m); renderRooms(m); renderCams(m); renderSystem(m);
-    if (current === 'detail') renderDetail(m);
+    if (DETAIL[current]) { detailKey = current; renderDetail(m); }
   }
 
   function lightInfo(s) {
@@ -420,6 +420,9 @@
     $('sLights').textContent = on + '/' + m.lights.length;
     $('sTemp').textContent = temps.length ? fmt1(avg(temps)) + '°' : '–';
     $('sHum').textContent = hums.length ? Math.round(avg(hums)) + ' %' : '–';
+    var warm = m.rooms.filter(function (r) { return num(r.temp) != null; }).sort(function (a, b) { return num(b.temp) - num(a.temp); })[0];
+    var wet = m.rooms.filter(function (r) { return num(r.hum) != null; }).sort(function (a, b) { return num(b.hum) - num(a.hum); })[0];
+    $('sClimNote').innerHTML = (warm ? '<span title="wärmster Raum">↑ ' + esc(warm.name) + ' ' + fmt1(num(warm.temp)) + '°</span>' : '') + (wet ? '<span title="feuchtester Raum">💧 ' + esc(wet.name) + ' ' + Math.round(num(wet.hum)) + ' %</span>' : '');
     $('sOpen').textContent = m.contacts.length ? open.length : '–';
     $('sOpenBox').classList.toggle('warn', open.length > 0);
 
@@ -557,7 +560,6 @@
 
   // ---------- Saugroboter ----------
   function renderVacuum(m) {
-    $('vacBox').hidden = !m.vacuums.length;
     if (!m.vacuums.length) return;
     var conf = lsGet(LS_CONN) || {}, base = (conf.url || '').replace(/\/+$/, '');
     $('vacCount').textContent = m.vacuums.length > 1 ? m.vacuums.length + ' Geräte' : '';
@@ -570,7 +572,7 @@
       if (a.fan_speed) info.push('Saugstufe ' + a.fan_speed);
       if (a.cleaned_area != null && busy) info.push(a.cleaned_area + ' m²');
       if (a.error && a.error !== 'no_error' && st === 'error') info.push(a.error);
-      var h = '<div class="vac-top"><span class="ico" aria-hidden="true">🤖</span><div class="txt"><b>' + esc(name(v)) + '</b><small>' + esc(info.join(' · ')) + '</small></div>'
+      var h = '<div class="vac-top"><span class="ico" aria-hidden="true">🤖</span><div class="txt"><b>' + esc(devName(dev) || name(v)) + '</b><small>' + esc(info.join(' · ')) + '</small></div>'
         + '<span class="pill ' + (st === 'error' ? 'open' : busy ? 'warn' : 'ok') + '">' + esc(VAC[st] || st) + '</span></div>';
       h += '<div class="btnrow">'
         + (st === 'cleaning' ? '<button class="btn" type="button" data-vac="pause" data-id="' + esc(v.entity_id) + '">⏸ Pause</button>' : '<button class="btn" type="button" data-vac="start" data-id="' + esc(v.entity_id) + '">▶ ' + (st === 'paused' ? 'Weiter' : 'Saugen') + '</button>')
@@ -622,7 +624,8 @@
     head.setAttribute('aria-expanded', !isFolded(box.dataset.fold));
   });
   function toggleFold(e) {
-    if (e.target.closest('button:not(.box-head), a, select, input')) return;
+    if (document.body.classList.contains('arrange') || boardLong) { boardLong = false; return; }
+    if (e.target.closest('button:not(.box-head):not(.acc-h), a, select, input')) return;
     var head = e.target.closest('[data-fold] > .box-head, [data-fold-sec] > .fh'); if (!head) return;
     if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
     if (e.type === 'keydown') e.preventDefault();
@@ -747,10 +750,10 @@
   });
 
   // ---------- Wohnungs-Übersichten (Kacheln oben) ----------
-  var detailKey = 'lights';
+  var detailKey = 'lights', accOpen = {};
   function renderDetail(m) {
     var el = $('detail'), html = '';
-    if (detailKey === 'lights') {
+    if (detailKey === 'lichter') {
       var on = m.lights.filter(function (l) { return l.s.state === 'on'; }).length;
       html = '<section class="box"><div class="box-head"><h2>💡 Lichter in der Wohnung</h2><span class="count">' + on + ' von ' + m.lights.length + ' an</span></div><div class="btnrow" style="margin-top:0"><button class="btn ghost small" type="button" data-allon>Alle an</button><button class="btn ghost small" type="button" data-roomlights="__all">Alle aus</button></div></section>';
       el.innerHTML = html;
@@ -764,7 +767,7 @@
       });
       return;
     }
-    if (detailKey === 'open') {
+    if (detailKey === 'fenster') {
       var cs = m.contacts.slice().sort(function (a, b) { return (b.s.state === 'on') - (a.s.state === 'on'); });
       var open = cs.filter(function (c) { return c.s.state === 'on'; }).length;
       html = '<section class="box"><div class="box-head"><h2>🪟 Fenster und Türen</h2><span class="count">' + (cs.length ? open + ' offen' : '') + '</span></div><div class="dlist" style="display:grid;gap:8px">'
@@ -778,32 +781,36 @@
         + '</div></section>';
       el.innerHTML = html; return;
     }
-    // Temperatur / Feuchte: alle Räume, gleiche Skala, damit man sie vergleichen kann
-    var isT = detailKey === 'temp', key = isT ? 'temp' : 'hum';
-    var rooms = m.rooms.filter(function (r) { return r[key]; });
-    var vals = rooms.map(function (r) { return num(r[key]); }).filter(function (v) { return v != null; });
-    var avg = vals.length ? vals.reduce(function (a, b) { return a + b; }, 0) / vals.length : null;
-    var o = isT ? { title: '', unit: '°C', col: 'var(--p1)', dec: 1 } : { title: '', unit: '%', col: 'var(--cool)', dec: 0 };
-    var f = function (v) { return v == null ? '–' : o.dec ? fmt1(v) : String(Math.round(v)); };
-    html = '<section class="box"><div class="box-head"><h2>' + (isT ? '🌡️ Temperatur' : '💧 Luftfeuchte') + ' in der Wohnung</h2><span class="count">Ø ' + f(avg) + ' ' + o.unit + '</span></div>'
-      + '<div class="list">' + rooms.slice().sort(function (a, b) { return (num(b[key]) || -99) - (num(a[key]) || -99); }).map(function (r) {
-        var v = num(r[key]), warn = !isT && v >= 65;
-        return '<div class="row"><span class="ico">' + r.icon + '</span><div class="txt"><b>' + esc(r.name) + '</b><small>' + esc(name(r[key])) + '</small></div><span class="dval"' + (warn ? ' style="color:var(--danger)"' : '') + '>' + f(v) + ' ' + o.unit + '</span></div>';
-      }).join('') + '</div></section>';
-    var ids = rooms.map(function (r) { return r[key].entity_id; });
-    html += '<section class="box"><div class="box-head"><h2>Verlauf je Raum</h2></div>' + rangeChips('flat');
-    var data = ids.length ? loadSeries(ids, rangeOf('flat')) : {};
-    if (!data) html += '<div class="cload">Verlauf wird geladen …</div>';
-    else {
-      var lo = Infinity, hi = -Infinity;
-      ids.forEach(function (id) { (data[id] || []).forEach(function (p) { lo = Math.min(lo, p.lo != null ? p.lo : p.v); hi = Math.max(hi, p.hi != null ? p.hi : p.v); }); });
-      rooms.forEach(function (r) { html += chart(data[r[key].entity_id] || [], rangeOf('flat'), { title: r.icon + ' ' + r.name, unit: o.unit, col: o.col, dec: o.dec, lo: lo, hi: hi }); });
-    }
-    el.innerHTML = html + '</section>';
+    // Klima: alle Räume untereinander, Antippen klappt Temperatur- und Feuchteverlauf auf
+    var rooms = m.rooms.filter(function (r) { return r.temp || r.hum; });
+    var ts = rooms.map(function (r) { return num(r.temp); }).filter(function (v) { return v != null; });
+    var hs = rooms.map(function (r) { return num(r.hum); }).filter(function (v) { return v != null; });
+    var avg = function (a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; };
+    html = '<section class="box"><div class="box-head"><h2>🌡️ Klima in der Wohnung</h2><span class="count">Ø ' + (ts.length ? fmt1(avg(ts)) + ' °C' : '–') + ' · ' + (hs.length ? Math.round(avg(hs)) + ' %' : '–') + '</span></div>'
+      + rangeChips('flat') + '<div style="margin-top:12px">';
+    rooms.forEach(function (r) {
+      var t = num(r.temp), h = num(r.hum), isOpen = !!accOpen[r.id];
+      html += '<div class="acc"><button class="acc-h" type="button" data-acc="' + esc(r.id) + '" aria-expanded="' + isOpen + '"><span class="ico" aria-hidden="true">' + r.icon + '</span><span class="txt"><b>' + esc(r.name) + '</b><small>'
+        + (isOpen ? 'Verlauf ' + RANGES[rangeOf('flat')].label : 'Verlauf anzeigen') + '</small></span><span class="vals">' + (t != null ? '<span>' + fmt1(t) + '°</span>' : '') + (h != null ? '<span class="h"' + (h >= 65 ? ' style="color:var(--danger)"' : '') + '>' + Math.round(h) + ' %</span>' : '') + '</span><span class="chev" aria-hidden="true">▾</span></button>';
+      if (isOpen) {
+        var ids = [r.temp && r.temp.entity_id, r.hum && r.hum.entity_id].filter(Boolean), data = loadSeries(ids, rangeOf('flat'));
+        html += '<div class="acc-b">';
+        if (!data) html += '<div class="cload">Verlauf wird geladen …</div>';
+        else {
+          if (r.temp) html += chart(data[r.temp.entity_id] || [], rangeOf('flat'), { title: 'Temperatur', unit: '°C', col: 'var(--p1)', dec: 1 });
+          if (r.hum) html += chart(data[r.hum.entity_id] || [], rangeOf('flat'), { title: 'Luftfeuchte', unit: '%', col: 'var(--cool)', dec: 0 });
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+    el.innerHTML = html + '</div></section>';
   }
   document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-acc]');
+    if (a) { accOpen[a.dataset.acc] = !accOpen[a.dataset.acc]; queueRender(); return; }
     var d = e.target.closest('[data-detail]');
-    if (d) { detailKey = d.dataset.detail; show('detail'); window.scrollTo(0, 0); return; }
+    if (d) { go(d.dataset.detail === 'open' ? 'fenster' : d.dataset.detail === 'lights' ? 'lichter' : 'klima'); return; }
     var rl = e.target.closest('[data-roomlights]');
     if (rl) {
       var m = model(), ls = rl.dataset.roomlights === '__all' ? m.lights : (m.rooms.filter(function (r) { return r.id === rl.dataset.roomlights; })[0] || { lights: [] }).lights;
@@ -938,7 +945,6 @@
         + (d.precipitation ? '<em>' + fmt1(d.precipitation) + ' mm</em>' : '') + '</div>';
     }).join('') + '</div>';
     $('weather').innerHTML = html;
-    $('weatherWhen').textContent = '';
   }
 
   // ---------- Heizung (climate-Entitäten, z. B. Heizkörperthermostate) ----------
@@ -1270,27 +1276,118 @@
   });
 
   // ---------- Ansichten ----------
-  var views = ['uebersicht', 'raeume', 'kameras', 'system', 'detail'], current = 'uebersicht', lastView = 'uebersicht';
+  // Routen: jede Seite hat einen eigenen Eintrag im Verlauf, damit „Zurück“ in der App zur vorigen Seite geht statt sie zu schließen
+  var DETAIL = { lichter: 1, fenster: 1, klima: 1 };
+  var views = ['uebersicht', 'raeume', 'kameras', 'sauger', 'system', 'detail'], current = 'uebersicht', lastView = 'uebersicht';
   function show(v) {
-    if (views.indexOf(v) < 0) v = 'uebersicht';
+    if (views.indexOf(v) < 0 && !DETAIL[v]) v = 'uebersicht';
     current = v;
+    var view = DETAIL[v] ? 'detail' : v;
     var needsConn = setupNeeded && v !== 'system';
     $('welcome').hidden = !needsConn;
-    views.forEach(function (x) { $('view-' + x).hidden = x !== v || needsConn; });
-    if (v !== 'system' && v !== 'detail') lastView = v;
-    document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.view === v); });
+    views.forEach(function (x) { $('view-' + x).hidden = x !== view || needsConn; });
+    if (v === 'uebersicht' || v === 'raeume') lastView = v;
+    document.querySelectorAll('.tab[data-view]').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.view === v); });
+    $('menuBtn').setAttribute('aria-selected', v !== 'uebersicht' && v !== 'raeume');
+    document.querySelectorAll('.menu [data-go]').forEach(function (b) { if (b.dataset.go === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     $('sysBtn').setAttribute('aria-pressed', v === 'system');
+    if (DETAIL[v]) detailKey = v;
+    closeMenu();
+    if (v !== 'uebersicht') setArrange(false);
     if (connState === 'ok') queueRender();
-    try { history.replaceState(null, '', '#' + v); } catch (e) {}
   }
+  function go(v) {
+    if (v === current) { closeMenu(); return; }
+    try { history.pushState({ v: v, d: ((history.state && history.state.d) || 0) + 1 }, '', '#' + v); } catch (e) {}
+    show(v); window.scrollTo(0, 0);
+  }
+  window.addEventListener('popstate', function (e) {
+    if (menuOpen()) { closeMenu(); }
+    show((e.state && e.state.v) || (location.hash || '').slice(1) || 'uebersicht');
+  });
   document.querySelector('.tabs').addEventListener('click', function (e) {
-    var t = e.target.closest('.tab'); if (!t) return;
-    show(t.dataset.view); window.scrollTo(0, 0);
+    var t = e.target.closest('.tab[data-view]'); if (!t) return;
+    go(t.dataset.view);
+  });
+  document.addEventListener('click', function (e) {
+    var g = e.target.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
+    if (e.target.closest('[data-back]')) { if (history.state && history.state.d) history.back(); else go(lastView); }
   });
   // System-Infos: dezent über ⚙️ oben und die Pi-Zeile unten
-  $('sysBtn').addEventListener('click', function () { show(current === 'system' ? lastView : 'system'); window.scrollTo(0, 0); });
-  $('piLine').addEventListener('click', function () { show('system'); window.scrollTo(0, 0); });
-  document.addEventListener('click', function (e) { if (e.target.closest('[data-back]')) { show(lastView); window.scrollTo(0, 0); } });
+  $('sysBtn').addEventListener('click', function () { if (current === 'system' && history.state && history.state.d) history.back(); else go(current === 'system' ? 'uebersicht' : 'system'); });
+  $('piLine').addEventListener('click', function () { go('system'); });
+
+  // Menü (Burger)
+  function menuOpen() { return !$('menu').hidden; }
+  function closeMenu() { $('menu').hidden = true; $('menuBack').hidden = true; $('menuBtn').setAttribute('aria-expanded', 'false'); }
+  $('menuBtn').addEventListener('click', function () {
+    if (menuOpen()) { closeMenu(); return; }
+    $('menu').hidden = false; $('menuBack').hidden = false; $('menuBtn').setAttribute('aria-expanded', 'true');
+    var cur = $('menu').querySelector('[aria-current]') || $('menu').querySelector('button'); cur.focus();
+  });
+  $('menuBack').addEventListener('click', closeMenu);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && menuOpen()) { closeMenu(); $('menuBtn').focus(); } });
+
+  // Bereiche der Übersicht anordnen: lange auf eine Überschrift drücken, dann ziehen oder ↑ ↓
+  var board = $('board'), boardLong = false;
+  (function applyBoardOrder() {
+    (lsGet(LS_BOARD) || []).forEach(function (k) { var b = board.querySelector(':scope > [data-fold="' + k + '"]'); if (b) board.appendChild(b); });
+    // Kästen, die neu dazukommen, stehen hinter den bekannten; Hilfselemente für den Anordnen-Modus einfügen
+    board.querySelectorAll(':scope > .box').forEach(function (b) {
+      var h = b.querySelector('.box-head');
+      h.insertAdjacentHTML('afterbegin', '<span class="grip" aria-hidden="true">⠿</span>');
+      h.insertAdjacentHTML('beforeend', '<span class="mv"><button type="button" data-mv-box="-1" aria-label="nach oben">↑</button><button type="button" data-mv-box="1" aria-label="nach unten">↓</button></span>');
+    });
+  })();
+  function saveBoard() { lsSet(LS_BOARD, Array.prototype.map.call(board.querySelectorAll(':scope > .box'), function (b) { return b.dataset.fold; })); }
+  function setArrange(on) {
+    document.body.classList.toggle('arrange', on);
+    $('arrangeBar').hidden = !on;
+    if (on) toast('Kästen ziehen oder mit ↑ ↓ verschieben, dann „Fertig“.');
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-arrange]')) { go('uebersicht'); setArrange(true); return; }
+    var mv = e.target.closest('[data-mv-box]'); if (!mv) return;
+    var box = mv.closest('.box'), d = +mv.dataset.mvBox, vis = Array.prototype.filter.call(board.children, function (b) { return !b.hidden; });
+    var i = vis.indexOf(box), t = vis[i + d]; if (!t) return;
+    if (d < 0) board.insertBefore(box, t); else board.insertBefore(t, box);
+    saveBoard(); mv.focus();
+  });
+  $('arrangeDone').addEventListener('click', function () { setArrange(false); });
+  (function boardDrag() {
+    var timer = null, drag = null, sx = 0, sy = 0;
+    board.addEventListener('pointerdown', function (e) {
+      var head = e.target.closest('#board > .box > .box-head'); if (!head || e.target.closest('button, a, select, input')) return;
+      var box = head.parentNode; sx = e.clientX; sy = e.clientY;
+      if (document.body.classList.contains('arrange')) { startDrag(box, e); return; }
+      timer = setTimeout(function () { boardLong = true; setArrange(true); if (navigator.vibrate) navigator.vibrate(15); }, 550);
+    });
+    function startDrag(box, e) {
+      drag = { box: box, y: e.clientY, id: e.pointerId };
+      box.classList.add('dragging');
+      try { box.querySelector('.box-head').setPointerCapture(e.pointerId); } catch (x) {}
+    }
+    document.addEventListener('pointermove', function (e) {
+      if (timer && (Math.abs(e.clientX - sx) > 8 || Math.abs(e.clientY - sy) > 8)) { clearTimeout(timer); timer = null; }
+      if (!drag) return;
+      e.preventDefault();
+      var dy = e.clientY - drag.y;
+      drag.box.style.transform = 'translateY(' + dy + 'px)';
+      // am Nachbarn vorbeigezogen? Dann im DOM tauschen und Versatz zurücksetzen
+      var vis = Array.prototype.filter.call(board.children, function (b) { return !b.hidden; });
+      var i = vis.indexOf(drag.box), r = drag.box.getBoundingClientRect(), mid = r.top + r.height / 2;
+      var prev = vis[i - 1], next = vis[i + 1];
+      if (prev && mid < prev.getBoundingClientRect().top + prev.getBoundingClientRect().height / 2) { board.insertBefore(drag.box, prev); drag.y = e.clientY; drag.box.style.transform = ''; }
+      else if (next && mid > next.getBoundingClientRect().top + next.getBoundingClientRect().height / 2) { board.insertBefore(next, drag.box); drag.y = e.clientY; drag.box.style.transform = ''; }
+    }, { passive: false });
+    function end() {
+      clearTimeout(timer); timer = null;
+      if (!drag) return;
+      drag.box.classList.remove('dragging'); drag.box.style.transform = ''; drag = null; saveBoard();
+    }
+    document.addEventListener('pointerup', end);
+    document.addEventListener('pointercancel', end);
+  })();
 
   (function tick() {
     var d = new Date();
@@ -1300,6 +1397,8 @@
     setTimeout(tick, 1000 - d.getMilliseconds());
   })();
 
-  show((location.hash || '').slice(1));
+  var start = (location.hash || '').slice(1) || 'uebersicht';
+  try { history.replaceState({ v: start, d: 0 }, '', '#' + start); } catch (e) {}
+  show(start);
   connect();
 })();

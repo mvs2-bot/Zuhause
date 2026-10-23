@@ -6,7 +6,10 @@ Eigenes Smart-Home-Dashboard als PWA für Home Assistant auf dem Raspberry Pi 4.
 
 ## Was die App kann
 
-- **Übersicht:** kompaktes Lage-Banner, Kacheln (Lichter, offene Fenster/Türen, Ø Temperatur und Feuchte), Wetter (HA-Wetter-Eintrag, 5-Tage-Vorhersage), Heizung, einklappbare Hinweise, Szenen in eigener Reihenfolge („Alles aus“ hervorgehoben), Lichter nach Raum gruppiert. Tippen schaltet, lange drücken öffnet Helligkeit, Farbtemperatur und Farbe.
+- **Navigation:** unten Übersicht, Räume und ☰ Menü (alle Seiten). Jede Seite hat einen eigenen Verlaufseintrag, die Zurück-Taste des Handys geht also eine Seite zurück statt die App zu schließen.
+- **Übersicht:** kompaktes Lage-Banner, Kacheln (Lichter, offene Fenster/Türen, kombinierte Klima-Kachel), Wetter (HA-Wetter-Eintrag, 5-Tage-Vorhersage, Link „Mehr ↗“), Heizung, einklappbare Hinweise, Szenen in eigener Reihenfolge („Alles aus“ hervorgehoben), Lichter nach Raum gruppiert. Kästen sind einklappbar (▾) und lassen sich per langem Druck auf die Überschrift (oder Menü → „Bereiche anordnen“) ziehen bzw. mit ↑ ↓ verschieben. Breite Bildschirme zeigen zwei Spalten.
+- **Klima:** alle Räume mit Temperatur und Feuchte, Antippen klappt die Verläufe des Raums auf.
+- **Saugroboter:** eigene Seite im Menü (Start/Pause, Station, Finden, Räume). Tippen schaltet, lange drücken öffnet Helligkeit, Farbtemperatur und Farbe.
 - **Räume:** Raum-Kacheln oben, darunter der gewählte Raum mit Klima-Verlauf (24 h / 7 Tage / 30 Tage, mit Min/Max-Band und Tooltip), Thermostaten, Kontakten, Bewegung, Tastern, Szenen und Lampen. Raum-Reihenfolge einstellbar.
 - **Kameras:** Blink scharf/unscharf, letztes Bild je Kamera, „Neues Bild“ (`blink.trigger_camera`).
 - **System (⚙️ oben oder Pi-Zeile unten):** Pi-Werte und -Verlauf (System Monitor), Fritzbox (AVM FRITZ!Box Tools), HA-Kennzahlen, Integrationen, Zigbee-Geräte, Verbindung.

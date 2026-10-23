@@ -389,6 +389,86 @@
   .dlist .row b small { display: inline; }
   #fritz .meter b { font-size: 1rem; }
   .dval { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* Runde 4: Navigation, Karten, Anordnen */
+  .wrap { max-width: 760px; }
+  @media (min-width: 900px) { .wrap { max-width: 1080px; } }
+  .board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+  @media (min-width: 760px) {
+    .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .board > [data-size="l"] { grid-column: 1 / -1; }
+  }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat.wide { grid-column: 1 / -1; }
+  @media (min-width: 760px) { .stats { grid-template-columns: 1fr 1fr 2fr; } .stat.wide { grid-column: auto; } }
+  .clim-tile { display: flex; align-items: center; gap: 14px; }
+  .ct-main { display: flex; gap: 22px; }
+  .ct-v { display: flex; flex-direction: column; }
+  .ct-v small { font-size: .74rem; font-weight: 700; color: var(--mute); }
+  .stat b.cool { color: var(--cool); }
+  .ct-side { flex: 1; min-width: 0; font-size: .74rem; font-weight: 700; color: var(--mute); text-align: right; line-height: 1.35; }
+  .ct-side span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ct-go, .stat span.go { color: var(--p1); font-weight: 800; font-size: 1.2rem; }
+  .ext { text-decoration: none; }
+
+  /* Einklapp-Knopf deutlich: runder Knopf mit Pfeil */
+  .chev { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    display: inline-grid; place-items: center; font-size: .8rem; margin-left: 10px; transition: transform .2s ease-out; }
+  [data-fold] > .box-head:hover .chev, .fh:hover .chev { border-color: var(--p1); color: var(--p1); }
+  .fh { min-height: 36px; }
+  .fh .chev { width: 26px; height: 26px; flex-basis: 26px; }
+  .folded > .box-head .chev, .folded > .fh .chev { transform: rotate(-90deg); }
+  .box.folded { padding-block: 12px; }
+
+  /* größere Touch-Ziele */
+  .stepper button { width: 44px; height: 44px; }
+  .orow button { width: 40px; height: 40px; }
+  .icon-btn { min-width: 44px; min-height: 44px; }
+
+  /* Menü */
+  .tab#menuBtn[aria-expanded="true"] { color: var(--p1); background: var(--p1-soft); }
+  .menu-back { position: fixed; inset: 0; z-index: 34; background: rgba(0,0,0,.35); }
+  .menu { position: fixed; z-index: 35; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    width: min(360px, calc(100vw - 32px)); background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25); transform-origin: bottom right; animation: pop .16s ease-out; }
+  @keyframes pop { from { opacity: 0; transform: scale(.94) translateY(6px); } to { opacity: 1; transform: none; } }
+  .menu-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .menu-grid button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 4px; min-height: 72px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg);
+    font-size: .74rem; font-weight: 700; color: var(--text); text-align: center; line-height: 1.2; }
+  .menu-grid button i { font-style: normal; font-size: 1.35rem; }
+  .menu-grid button:hover { border-color: var(--p1); }
+  .menu-grid button[aria-current="page"] { background: var(--p1-soft); border-color: var(--p1); color: var(--ink); }
+  .menu-wide { width: 100%; margin-top: 8px; min-height: 44px; border-radius: 12px; border: 1px dashed var(--line); background: none; font-weight: 700; font-size: .82rem; color: var(--mute); }
+  .menu-wide:hover { border-color: var(--p1); color: var(--p1); }
+
+  /* Anordnen */
+  .arrange-bar { position: fixed; z-index: 33; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; gap: 12px; background: var(--ink); color: var(--bg); border-radius: 14px; padding: 8px 8px 8px 14px; font-size: .82rem; font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
+  .arrange-bar .btn { background: var(--p1-line); color: #1d1405; }
+  body.arrange #board > .box > :not(.box-head) { display: none !important; }
+  body.arrange #board > .box { padding-block: 10px; outline: 2px dashed var(--p1-line); outline-offset: -2px; }
+  body.arrange #board > .box > .box-head { margin: 0; touch-action: none; cursor: grab; }
+  body.arrange #board > .box > .box-head .chev, body.arrange #board > .box > .box-head .count, body.arrange #board > .box > .box-head .link-btn, body.arrange #board > .box > .box-head .head-links { display: none; }
+  .mv { display: none; gap: 6px; }
+  body.arrange .mv { display: inline-flex; }
+  .mv button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-weight: 800; color: var(--ink); }
+  .grip { display: none; color: var(--mute); margin-right: 8px; font-size: 1.1rem; }
+  body.arrange .grip { display: inline; }
+  .box.dragging { opacity: .85; box-shadow: 0 12px 30px rgba(0,0,0,.2); position: relative; z-index: 5; }
+
+  /* Klima-Akkordeon */
+  .acc { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+  .acc + .acc { margin-top: 8px; }
+  .acc-h { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 12px; min-height: 56px; background: none; border: 0; text-align: left; }
+  .acc-h .txt { flex: 1; min-width: 0; }
+  .acc-h b { display: block; color: var(--ink); font-size: .92rem; }
+  .acc-h small { display: block; color: var(--mute); font-size: .76rem; font-weight: 600; }
+  .acc-h .vals { display: flex; gap: 12px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+  .acc-h .vals .h { color: var(--cool); }
+  .acc-h[aria-expanded="true"] .chev { transform: none; }
+  .acc-h[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+  .acc-b { padding: 0 12px 12px; }
+  @media (prefers-reduced-motion: reduce) { .menu { animation: none; } .chev { transition: none; } }
 </style>
 </head>
 <body>
@@ -421,55 +501,63 @@
     <div class="status" id="status"></div>
 
     <div class="stats" aria-label="Übersicht">
-      <button class="stat" type="button" data-detail="lights"><b id="sLights">–</b><span>Lichter an ›</span></button>
-      <button class="stat" type="button" data-detail="open" id="sOpenBox"><b id="sOpen">–</b><span>Fenster/Türen offen ›</span></button>
-      <button class="stat" type="button" data-detail="temp"><b id="sTemp">–</b><span>Innen Ø ›</span></button>
-      <button class="stat" type="button" data-detail="hum"><b id="sHum">–</b><span>Feuchte Ø ›</span></button>
+      <button class="stat" type="button" data-go="lichter"><b id="sLights">–</b><span>Lichter an ›</span></button>
+      <button class="stat" type="button" data-go="fenster" id="sOpenBox"><b id="sOpen">–</b><span>Fenster/Türen offen ›</span></button>
+      <button class="stat wide clim-tile" type="button" data-go="klima" aria-label="Klima: Temperatur und Luftfeuchte aller Räume">
+        <span class="ct-main"><span class="ct-v"><b id="sTemp">–</b><small>Temperatur Ø</small></span><span class="ct-v"><b id="sHum" class="cool">–</b><small>Feuchte Ø</small></span></span>
+        <span class="ct-side" id="sClimNote"></span><span class="ct-go" aria-hidden="true">›</span>
+      </button>
     </div>
 
-    <section class="box" id="weatherBox" data-fold="weather" hidden>
-      <div class="box-head"><h2>Wetter Straubing</h2><span class="count" id="weatherWhen"></span></div>
+    <div class="board" id="board">
+
+    <section class="box" id="weatherBox" data-fold="weather" data-size="m" hidden>
+      <div class="box-head"><h2>Wetter Straubing</h2><a class="link-btn ext" href="https://www.wetteronline.de/wetter/straubing" target="_blank" rel="noopener" aria-label="Mehr Wetter bei wetteronline.de (öffnet neues Fenster)">Mehr ↗</a></div>
       <div id="weather"></div>
     </section>
 
-    <section class="box" id="vacBox" data-fold="vacuum" hidden>
-      <div class="box-head"><h2>Saugroboter</h2><span class="count" id="vacCount"></span></div>
-      <div id="vac"></div>
-    </section>
-
-    <section class="box" id="heatBox" data-fold="heat" hidden>
+    <section class="box" id="heatBox" data-fold="heat" data-size="m" hidden>
       <div class="box-head"><h2>Heizung</h2><span class="count" id="heatCount"></span></div>
       <div class="heat-list" id="heat"></div>
     </section>
 
-    <section class="box" data-fold="notes">
+    <section class="box" data-fold="notes" data-size="m">
       <div class="box-head"><h2>Hinweise</h2><span class="count" id="noteCount"></span></div>
       <div class="notes" id="notes"></div>
     </section>
 
-    <section class="box" data-fold="scenes">
+    <section class="box" data-fold="scenes" data-size="m">
       <div class="box-head"><h2>Szenen</h2><button class="link-btn" type="button" id="favBtn">Bearbeiten</button></div>
       <div class="scenes" id="scenes"></div>
     </section>
 
-    <section class="box" data-fold="lights">
+    <section class="box" data-fold="lights" data-size="l">
       <div class="box-head"><h2>Lichter</h2><span class="head-links"><button class="link-btn" type="button" data-roomorder>Räume sortieren</button><button class="link-btn" type="button" id="allOff">Alle aus</button></span></div>
       <div id="lights"></div>
       <p class="hint">Tippen schaltet, lange drücken für Helligkeit und Farbe.</p>
     </section>
 
-    <section class="box" id="musicBox" data-fold="music" hidden>
+    <section class="box" id="musicBox" data-fold="music" data-size="m" hidden>
       <div class="box-head"><h2>Musik</h2><span class="count" id="musicCount"></span></div>
       <div id="music"></div>
     </section>
 
-    <section class="box" id="sayBox" data-fold="say" hidden>
+    <section class="box" id="sayBox" data-fold="say" data-size="m" hidden>
       <div class="box-head"><h2>Durchsage</h2></div>
       <form class="say" id="sayForm">
         <select id="sayTarget" aria-label="Wohin"></select>
         <input type="text" id="sayText" placeholder="z. B. Essen ist fertig!" aria-label="Text der Durchsage">
         <button class="btn" type="submit" aria-label="Senden">📢</button>
       </form>
+    </section>
+    </div>
+  </section>
+
+  <!-- Saugroboter -->
+  <section id="view-sauger" class="view" hidden>
+    <section class="box" id="vacBox">
+      <div class="box-head"><h2>🤖 Saugroboter</h2><span class="count" id="vacCount"></span></div>
+      <div id="vac"><div class="empty">Kein Saugroboter in Home Assistant gefunden.</div></div>
     </section>
   </section>
 
@@ -556,7 +644,7 @@
   <div class="tabs-in" role="tablist">
     <button class="tab" type="button" role="tab" data-view="uebersicht" aria-selected="true"><i>🏠</i>Übersicht</button>
     <button class="tab" type="button" role="tab" data-view="raeume" aria-selected="false"><i>🚪</i>Räume</button>
-    <button class="tab" type="button" role="tab" data-view="kameras" aria-selected="false"><i>📷</i>Kameras</button>
+    <button class="tab" type="button" id="menuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="menu"><i>☰</i>Menü</button>
   </div>
 </nav>
 
@@ -590,9 +678,29 @@
   </form>
 </dialog>
 
+<div class="menu-back" id="menuBack" hidden></div>
+<nav class="menu" id="menu" aria-label="Alle Seiten" hidden>
+  <div class="menu-grid">
+    <button type="button" data-go="uebersicht"><i>🏠</i>Übersicht</button>
+    <button type="button" data-go="raeume"><i>🚪</i>Räume</button>
+    <button type="button" data-go="lichter"><i>💡</i>Lichter</button>
+    <button type="button" data-go="klima"><i>🌡️</i>Klima</button>
+    <button type="button" data-go="fenster"><i>🪟</i>Fenster &amp; Türen</button>
+    <button type="button" data-go="kameras"><i>📷</i>Kameras</button>
+    <button type="button" data-go="sauger"><i>🤖</i>Saugroboter</button>
+    <button type="button" data-go="system"><i>⚙️</i>System</button>
+  </div>
+  <button type="button" class="menu-wide" data-arrange>↕ Bereiche der Übersicht anordnen</button>
+</nav>
+
+<div class="arrange-bar" id="arrangeBar" hidden>
+  <span>Kästen ziehen oder mit ↑ ↓ verschieben</span>
+  <button class="btn small" type="button" id="arrangeDone">Fertig</button>
+</div>
+
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js?v=9"></script>
+<script src="app.js?v=10"></script>
 <script src="shared/ios-nav.js" data-bottom="84" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
