@@ -1,21 +1,25 @@
 # 🏡 Zuhause
 
-Eigenes Smart-Home-Dashboard als PWA für Home Assistant auf dem Raspberry Pi 4. Gleiche Designsprache wie die anderen mvs2-bot-Apps, Akzent Bernstein.
+Eigenes Smart-Home-Dashboard als PWA für Home Assistant auf dem Raspberry Pi 4. Apple-Designsprache, Akzent Bernstein.
 
 **App:** https://mvs2-bot.github.io/Zuhause/
 
 ## Was die App kann
 
-- **Navigation:** unten Übersicht, Räume und ☰ Menü (alle Seiten). Jede Seite hat einen eigenen Verlaufseintrag, die Zurück-Taste des Handys geht also eine Seite zurück statt die App zu schließen.
-- **Übersicht:** kompaktes Lage-Banner, Kacheln (Lichter, offene Fenster/Türen, kombinierte Klima-Kachel), Wetter (HA-Wetter-Eintrag, 5-Tage-Vorhersage, Link „Mehr ↗“), Heizung, einklappbare Hinweise, Szenen in eigener Reihenfolge („Alles aus“ hervorgehoben), Lichter nach Raum gruppiert. Kästen sind einklappbar (▾) und lassen sich per langem Druck auf die Überschrift (oder Menü → „Bereiche anordnen“) ziehen bzw. mit ↑ ↓ verschieben. Breite Bildschirme zeigen zwei Spalten.
-- **Klima:** alle Räume mit Temperatur und Feuchte, Antippen klappt die Verläufe des Raums auf.
-- **Automationen:** alle Automationen mit Ein/Aus-Schalter, Skripte als „Ausführen“-Knopf, Helfer (input_number, input_datetime, input_boolean, input_select, input_text) direkt änderbar. Zuordnung über den Namen: alles mit gleichem Präfix vor dem Doppelpunkt („Lüften: …“) landet in einer Gruppe.
-- **Saugroboter:** eigene Seite im Menü (Start/Pause, Station, Finden, Räume). Tippen schaltet, lange drücken öffnet Helligkeit, Farbtemperatur und Farbe.
-- **Räume:** Raum-Kacheln oben, darunter der gewählte Raum mit Klima-Verlauf (24 h / 7 Tage / 30 Tage, mit Min/Max-Band und Tooltip), Thermostaten, Kontakten, Bewegung, Tastern, Szenen und Lampen. Raum-Reihenfolge einstellbar.
-- **Kameras:** Blink scharf/unscharf, letztes Bild je Kamera, „Neues Bild“ (`blink.trigger_camera`).
-- **System (⚙️ oben oder Pi-Zeile unten):** Pi-Werte und -Verlauf (System Monitor), Fritzbox (AVM FRITZ!Box Tools), HA-Kennzahlen, Integrationen, Zigbee-Geräte, Verbindung.
-- **Durchsage an die Echos:** erscheint automatisch, sobald Alexa Media Player eingerichtet ist.
-- Live-Updates per Abo, „verbunden“ pulsiert bei jeder Änderung. Persönliche Einstellungen (Szenen, Raum-Reihenfolge, Zeitraum) liegen nur im localStorage des Geräts.
+- **Design:** Apple-Designsprache (Systemschrift SF Pro bzw. Roboto, kleine bis mittlere Schriftgrößen, gruppierte Karten, Linien-Symbole statt Emojis), hell/dunkel automatisch oder fest in den Einstellungen.
+- **Navigation:** Navigation Rail am rechten Rand mit Übersicht, Räume, Licht, Klima, Heizung, Medien, Energie, Kameras, Sauger, Abläufe (Automationen) und Einstellungen. Jede Seite hat einen eigenen Verlaufseintrag, die Zurück-Taste des Handys geht also eine Seite zurück.
+- **Übersicht:** Bewohnerstatus (person.*), Lage-Banner, drei Kästen mit Symbol (Licht, Klima, Fenster), **interaktiver Grundriss** der Wohnung (Lampen, Fenster, Türen live; Lampe tippen schaltet, lange drücken öffnet Helligkeit/Farbe, Raum tippen öffnet den Raum), Wetter, Hinweise. Feuchte-Hinweise nutzen dieselben Grenzwerte wie die Automation „Lüften“ (`input_number.luftfeuchte_grenze_<raum>`).
+- **Licht:** alle Lampen nach Raum, Lieblingsszenen (früher auf der Startseite).
+- **Klima:** alle Räume mit Temperatur und Feuchte, Verläufe aufklappbar.
+- **Heizung:** Thermostate (climate.*) und Vorlagen der Fritzbox.
+- **Multimedia:** Musik über die Echos, Durchsage, Lautstärke aller Echos.
+- **Energieverbrauch:** jede Steckdose mit Strommessung (z. B. FRITZ!DECT 200 „Rechner“): Leistung jetzt, Verbrauch heute, Verbrauch je Stunde/Tag und Leistungsverlauf.
+- **Kameras:** Blink scharf/unscharf, letztes Bild, „Neues Bild“; die Steckdose einer Kamera (Schalter im selben Raum mit „Kamera“ im Namen) sitzt direkt an der Kamera.
+- **Abläufe:** alle Automationen mit Ein/Aus, Skripte, Helfer. Gruppe = Präfix vor dem Doppelpunkt im Namen („Lüften: …“).
+- **Saugroboter, Räume:** wie bisher.
+- **Einstellungen:** Erscheinungsbild, Übersicht anordnen, Räume sortieren, **Speedtest** (Integration „Speedtest.net“, „Jetzt messen“), Pi, Fritzbox, HA, Dienste, Zigbee, Verbindung.
+
+Der Grundriss ist in `app.js` (`PLAN`) in den Koordinaten des Original-Plans hinterlegt. Lampen landen nach Namen sortiert auf den eingezeichneten Plätzen ihres Raums; einzelne Lampen lassen sich über `PLAN_LAMP` fest platzieren.
 
 Nichts ist fest verdrahtet: Räume, Lampen, Sensoren und Kameras kommen aus den HA-Registern (Bereiche, Geräte, Entitäten). Neue Geräte erscheinen von selbst im richtigen Raum, sobald sie in HA einem Bereich zugeordnet sind. Versteckte Entitäten (in HA ausgeblendet) und Diagnose-Entitäten werden ignoriert.
 
