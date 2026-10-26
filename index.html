@@ -471,6 +471,9 @@
   .np .txt { flex: 1; min-width: 0; }
   .np b { display: block; color: var(--ink); font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .np small { display: block; color: var(--mute); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vol { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+  .vol .stepper button { background: var(--well); }
+  .vol + .chips { margin-top: 8px; }
   .playing { display: grid; gap: 6px; margin-top: 10px; }
   .dval { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .ext { text-decoration: none; }
@@ -760,7 +763,7 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js?v=12"></script>
+<script src="app.js?v=13"></script>
 <script src="shared/ios-nav.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });

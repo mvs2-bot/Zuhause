@@ -756,7 +756,12 @@
         + '<button class="icon-btn" type="button" data-mp="media_previous_track" aria-label="Zurück">' + ic('prev') + '</button>'
         + '<button class="icon-btn" type="button" data-mp="' + (on ? 'media_pause' : 'media_play') + '" aria-label="' + (on ? 'Pause' : 'Abspielen') + '">' + ic(on ? 'pause' : 'play') + '</button>'
         + '<button class="icon-btn" type="button" data-mp="media_next_track" aria-label="Weiter">' + ic('next') + '</button></div>'
-        + '<div class="slider"><label for="mpVol"><span>Lautstärke</span><span>' + (a.volume_level != null ? Math.round(a.volume_level * 100) + ' %' : '') + '</span></label><input type="range" id="mpVol" min="0" max="100" step="5" value="' + Math.round((a.volume_level || 0) * 100) + '"></div>'
+        // Lautstärke ohne Schieberegler (der hat sich beim Scrollen am Handy verstellt): − / + in 5er-Schritten und feste Stufen
+        + (function () {
+          var v = volPending[sp.s.entity_id] != null ? volPending[sp.s.entity_id] : a.volume_level != null ? Math.round(a.volume_level * 100) : null;
+          return '<div class="vol"><span class="noclim">Lautstärke</span><span class="stepper"><button type="button" data-vol="-5" aria-label="leiser">−</button><output aria-live="polite">' + (v == null ? '–' : v + ' %') + '</output><button type="button" data-vol="5" aria-label="lauter">+</button></span></div>'
+            + '<div class="chips wrap" role="group" aria-label="Lautstärke-Stufen">' + [10, 20, 30, 40, 60].map(function (x) { return '<button class="chip" type="button" data-volset="' + x + '" aria-pressed="' + (v === x) + '">' + x + ' %</button>'; }).join('') + '</div>';
+        })()
         + '<form class="say" data-spotify><input type="text" placeholder="Spotify: Playlist, Künstler oder Song" aria-label="Was soll Spotify spielen?"><button class="btn" type="submit" aria-label="Auf Spotify abspielen">' + ic('play') + '</button></form>';
     }
     if (m.spotify && (m.spotify.attributes.source_list || []).length) {
@@ -766,13 +771,27 @@
     }
     if (playingNow.length > 1 || (playingNow.length === 1 && sp && playingNow[0] !== sp)) html += '<div class="playing">' + playingNow.map(function (e) {
       return '<div class="noclim">' + ic('play') + esc(e.room && !isGroup(e.s) ? e.room.name : name(e.s)) + ': ' + esc(e.s.attributes.media_title || 'spielt') + '</div>'; }).join('') + '</div>';
-    var box = $('music'), focus = document.activeElement && box.contains(document.activeElement);
+    var box = $('music'), fa = document.activeElement, focus = fa && box.contains(fa) && /^(INPUT|SELECT)$/.test(fa.tagName);
     if (!focus) box.innerHTML = html; // nicht neu zeichnen, während getippt oder geschoben wird
   }
   document.addEventListener('change', function (e) {
     if (e.target.matches('[data-speaker]')) { lsSet(LS_SPEAKER, e.target.value); e.target.blur(); queueRender(); }
     if (e.target.matches('[data-spsource]')) { var sp = model().spotify; callService('media_player', 'select_source', { source: e.target.value }, { entity_id: sp.entity_id }).catch(function () {}); e.target.blur(); }
-    if (e.target.id === 'mpVol') { var s = speaker(model().echos); callService('media_player', 'volume_set', { volume_level: e.target.value / 100 }, { entity_id: s.s.entity_id }).catch(function () {}); e.target.blur(); }
+  });
+  // Lautstärke: Wert sofort anzeigen (Alexa meldet ihn erst nach ~2 s zurück), erst nach kurzer Pause senden
+  var volPending = {}, volTimer = null;
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-vol], [data-volset]'); if (!b) return;
+    var s = speaker(model().echos); if (!s) return;
+    var id = s.s.entity_id, a = s.s.attributes || {};
+    var cur = volPending[id] != null ? volPending[id] : Math.round((a.volume_level || 0) * 100);
+    var v = b.dataset.volset ? +b.dataset.volset : Math.max(0, Math.min(100, Math.round((cur + +b.dataset.vol) / 5) * 5));
+    volPending[id] = v; queueRender();
+    clearTimeout(volTimer);
+    volTimer = setTimeout(function () {
+      callService('media_player', 'volume_set', { volume_level: v / 100 }, { entity_id: id }).catch(function () {})
+        .then(function () { setTimeout(function () { delete volPending[id]; queueRender(); }, 3000); });
+    }, 500);
   });
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-mp]'); if (!b) return;
