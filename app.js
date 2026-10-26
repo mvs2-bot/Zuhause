@@ -11,7 +11,55 @@
 
   // Reihenfolge und Symbole der Räume (HA-Bereichsnamen); unbekannte Bereiche kommen alphabetisch dahinter
   var ROOM_ORDER = ['wohnzimmer', 'küche', 'schlafzimmer', 'büro', 'badezimmer', 'flur', 'toilette', 'keller'];
-  var ROOM_ICON = { 'wohnzimmer': '🛋️', 'küche': '🍳', 'schlafzimmer': '🛏️', 'büro': '💻', 'badezimmer': '🛁', 'bad': '🛁', 'flur': '🧥', 'toilette': '🚽', 'keller': '📦' };
+  var ROOM_ICON = { 'wohnzimmer': 'sofa', 'küche': 'pot', 'schlafzimmer': 'bed', 'büro': 'desk', 'badezimmer': 'bath', 'bad': 'bath', 'flur': 'door', 'toilette': 'wc', 'keller': 'box' };
+  // Symbole: eine Linienfamilie (24er-Raster, 1,8er Strich), statt Emojis
+  var ICONS = {
+    home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-6h4v6"/>',
+    rooms: '<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 12h9M12 3v18M12 15h9"/>',
+    plan: '<path d="M3 4h18v16H3z"/><path d="M11 4v7H3M11 15v5M15 11h6M11 11h1"/>',
+    bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2h5c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>',
+    thermo: '<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 10v7"/>',
+    drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+    window: '<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M12 3v18M4 12h16"/>',
+    door: '<path d="M6 21V4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21"/><path d="M3 21h18"/><path d="M14.5 12v.01"/>',
+    flame: '<path d="M12 21a6 6 0 0 0 6-6c0-3.6-2.6-5.6-3.6-8.6-.5 2-1.6 3-2.6 3.5C11.9 7 11 5 9 3c.3 3.2-3 5.5-3 10a6 6 0 0 0 6 8z"/>',
+    music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>',
+    camera: '<path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.8l1.5-2h6.4l1.5 2h1.8A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.5"/>',
+    vacuum: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v3"/>',
+    auto: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    plug: '<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0z"/><path d="M12 17v5"/>',
+    megaphone: '<path d="M3 10v4h4l7 5V5l-7 5z"/><path d="M17.5 9a4 4 0 0 1 0 6"/>',
+    speaker: '<rect x="6" y="3" width="12" height="18" rx="3"/><circle cx="12" cy="14" r="3"/><path d="M12 7v.01"/>',
+    send: '<path d="M4 12 20 4l-6 16-3-7z"/><path d="m11 13 9-9"/>',
+    walk: '<circle cx="13" cy="4.5" r="1.8"/><path d="M9 21l2.2-6.5L14 17v4M8 12l2.5-3.5 3.5.8 2 3.2h3M11.2 14.5 10.5 8.6"/>',
+    remote: '<rect x="7" y="2" width="10" height="20" rx="3"/><path d="M12 6v3M12 14v.01M12 17.5v.01"/>',
+    chev: '<path d="m6 9 6 6 6-6"/>',
+    left: '<path d="m15 18-6-6 6-6"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    shield: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',
+    moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+    power: '<path d="M12 3v9"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>',
+    play: '<path d="M7 4.5v15l12-7.5z"/>', pause: '<path d="M8 5v14M16 5v14"/>',
+    prev: '<path d="M18 5v14L8 12zM6 5v14"/>', next: '<path d="M6 5v14l10-7zM18 5v14"/>',
+    gauge: '<path d="M12 14l4-4"/><path d="M3.5 18a10 10 0 1 1 17 0"/>',
+    sparkle: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+    book: '<path d="M4 5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h14v-4"/>',
+    sunset: '<path d="M17 18a5 5 0 0 0-10 0M12 9V2M4.2 10.2l1.4 1.4M2 18h2M20 18h2M18.4 11.6l1.4-1.4M22 22H2M16 5l-4 4-4-4"/>',
+    sofa: '<path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v4H2z"/><path d="M5 17v2M19 17v2"/>',
+    pot: '<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 10h20M9.5 6.5c0-1 1-1 1-2.5M13.5 6.5c0-1 1-1 1-2.5"/>',
+    bed: '<path d="M3 19V6M3 14h18v5M21 14v-1a3 3 0 0 0-3-3h-8v4"/><circle cx="6.5" cy="11" r="1.5"/>',
+    desk: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+    bath: '<path d="M3 12h18v2a6 6 0 0 1-6 6H9a6 6 0 0 1-6-6z"/><path d="M6 12V5.5a2.5 2.5 0 0 1 4.6-1.3M7 20l-1 2M17 20l1 2"/>',
+    wc: '<path d="M7 3h6v8H7z"/><path d="M5 11h14a6 6 0 0 1-6 6h-1l1 4H8l1-4.2A6 6 0 0 1 5 11z"/>',
+    box: '<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/>',
+    wifi: '<path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19v.01"/>',
+    check: '<path d="m5 12 5 5 9-10"/>'
+  };
+  function ic(n, cls) { return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || ICONS.sparkle) + '</svg>'; }
   var SVC_ICON = { homeassistant: '🏠', hue: '💡', zha: '📡', blink: '📷', alexa_media: '🔵', google_drive: '☁️', backup: '💾', tailscale: '🔐',
     adguard: '🛡️', matter: '🧩', thread: '🧵', systemmonitor: '📊', met: '🌦️', sun: '☀️', shopping_list: '🛒', radio_browser: '📻', mobile_app: '📱',
     google_translate: '🗣️', hassio: '🧰', go2rtc: '🎥', backup_google_drive: '☁️' };
@@ -61,17 +109,21 @@
   function themeColor() {
     var dark = document.documentElement.getAttribute('data-theme') === 'dark'
       || (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
-    document.querySelector('meta[name="theme-color"]').content = dark ? '#000000' : '#b45309';
+    document.querySelector('meta[name="theme-color"]').content = dark ? '#000000' : '#f2f2f7';
+    var cur = document.documentElement.getAttribute('data-theme') || 'auto';
+    document.querySelectorAll('[data-theme-v]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.themeV === cur); });
   }
-  $('themeBtn').addEventListener('click', function () {
-    var cur = document.documentElement.getAttribute('data-theme')
-      || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    var next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('overall-theme', next); } catch (e) {}
+  // Erscheinungsbild in den Einstellungen: Automatisch (folgt dem Gerät), Hell, Dunkel; Schlüssel wie auf Stefans anderen Seiten
+  $('themeSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-theme-v]'); if (!b) return;
+    var v = b.dataset.themeV;
+    if (v === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', v);
+    try { if (v === 'auto') localStorage.removeItem('overall-theme'); else localStorage.setItem('overall-theme', v); } catch (x) {}
     themeColor();
   });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', themeColor);
   themeColor();
+  document.querySelectorAll('[data-ic]').forEach(function (el) { el.insertAdjacentHTML('afterbegin', ic(el.dataset.ic)); });
 
   // ---------- Verbindung (HA-WebSocket-API) ----------
   var ws = null, msgId = 0, pending = {}, subs = {}, retry = 0, retryTimer = null, connState = 'off', lastError = '';
@@ -265,6 +317,7 @@
     return d ? d.area_id : null;
   }
   function dc(s) { return s.attributes && s.attributes.device_class; }
+  function isDoor(s) { return dc(s) === 'door' || dc(s) === 'garage_door' || /t(ü|ue)r\b|tür/i.test(name(s)); }
   function name(s) { return (s.attributes && s.attributes.friendly_name) || s.entity_id; }
   function devName(id) { var d = devices[id]; return d ? (d.name_by_user || d.name || '') : ''; }
   function visible(id) { var e = reg(id); return !e.hidden; }
@@ -283,9 +336,9 @@
     var roomMap = {};
     Object.keys(areas).forEach(function (id) {
       var a = areas[id];
-      roomMap[id] = { id: id, name: a.name, icon: ROOM_ICON[a.name.toLowerCase()] || '🚪', lights: [], temps: [], hums: [], contacts: [], motions: [], cams: [], scenes: [], echos: [], climates: [], buttons: {} };
+      roomMap[id] = { id: id, name: a.name, icon: ROOM_ICON[a.name.toLowerCase()] || 'door', lights: [], temps: [], hums: [], contacts: [], motions: [], cams: [], scenes: [], echos: [], climates: [], plugs: [], buttons: {} };
     });
-    var m = { rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], heatTpl: [], vacuums: [], spotify: null, weather: null, fritz: [], automations: 0, autos: [], scripts: [], helpers: [], batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
+    var m = { persons: [], power: [], energy: [], speed: {}, humLimit: {}, rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], heatTpl: [], vacuums: [], spotify: null, weather: null, fritz: [], automations: 0, autos: [], scripts: [], helpers: [], batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
 
     Object.keys(S).forEach(function (id) {
       var s = S[id], dom = id.split('.')[0], e = reg(id), r = roomMap[areaOf(id)] || null;
@@ -296,6 +349,12 @@
       if (/^input_(number|boolean|datetime|select|text)$/.test(dom) && visible(id)) m.helpers.push(s);
       if (dom === 'button' && e.platform === 'fritzbox' && visible(id)) m.heatTpl.push(s); // FRITZ!SmartHome-Heizungsvorlagen
       if (dom === 'weather' && !m.weather) m.weather = s;
+      if (dom === 'person') m.persons.push(s);
+      if (e.platform === 'speedtestdotnet' && dom === 'sensor') m.speed[/upload/.test(e.key + id) ? 'up' : /ping/.test(e.key + id) ? 'ping' : 'down'] = s;
+      if (dom === 'input_number' && id.indexOf('input_number.luftfeuchte_grenze_') === 0) m.humLimit[id.slice(32)] = s;
+      if (dom === 'sensor' && dc(s) === 'power' && visible(id) && e.device) m.power.push(s);
+      if (dom === 'sensor' && dc(s) === 'energy' && visible(id) && e.device) m.energy.push(s);
+      if (dom === 'switch' && r && visible(id)) r.plugs.push(s); // Steckdosen (auch deaktivierte Schalter fehlen in S)
       if (dom === 'sensor' && dc(s) === 'battery' && visible(id) && e.device) m.batteries[e.device] = s;
       if (dom === 'sensor' && /_lqi$/.test(id) && e.device) m.lqi[e.device] = s;
       if (dom === 'update' && s.state === 'on' && visible(id)) m.updates.push(s);
@@ -374,7 +433,7 @@
     b.style.setProperty('--lc', i.col);
     b.setAttribute('aria-pressed', i.on);
     b.dataset.entity = s.entity_id;
-    b.innerHTML = '<div class="top"><span class="bulb">💡</span><span class="lvl">' + (i.off ? 'offline' : i.on ? i.lvl + ' %' : 'Aus') + '</span></div>'
+    b.innerHTML = '<div class="top"><span class="bulb">' + ic('bulb') + '</span><span class="lvl">' + (i.off ? 'offline' : i.on ? i.lvl + ' %' : 'Aus') + '</span></div>'
       + '<div><div class="name">' + esc((small || noRoom) && l.room ? shortName(s, l.room.name) : name(s)) + '</div>' + (small || noRoom || !l.room ? '' : '<div class="room">' + esc(l.room.name) + '</div>') + '</div>'
       + '<div class="bar"><div style="width:' + i.lvl + '%"></div></div>';
     return b;
@@ -384,64 +443,69 @@
   (function lightInput() {
     var timer = null, longFired = false, startX = 0, startY = 0;
     document.addEventListener('pointerdown', function (e) {
-      var b = e.target.closest('.light'); if (!b) return;
+      var b = e.target.closest('.light, .lamp'); if (!b) return;
       longFired = false; startX = e.clientX; startY = e.clientY;
       timer = setTimeout(function () { longFired = true; openLight(b.dataset.entity); }, 500);
     });
     document.addEventListener('pointermove', function (e) { if (timer && (Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8)) { clearTimeout(timer); timer = null; } });
     ['pointerup', 'pointercancel'].forEach(function (t) { document.addEventListener(t, function () { clearTimeout(timer); timer = null; }); });
-    document.addEventListener('contextmenu', function (e) { var b = e.target.closest('.light'); if (b) { e.preventDefault(); if (!longFired) openLight(b.dataset.entity); longFired = true; } });
+    document.addEventListener('contextmenu', function (e) { var b = e.target.closest('.light, .lamp'); if (b) { e.preventDefault(); if (!longFired) openLight(b.dataset.entity); longFired = true; } });
     document.addEventListener('click', function (e) {
-      var b = e.target.closest('.light'); if (!b) return;
+      var b = e.target.closest('.light, .lamp'); if (!b) return;
       if (longFired) { longFired = false; return; }
       var s = S[b.dataset.entity]; if (!s || unavailable(s)) { toast('Lampe ist gerade nicht erreichbar.'); return; }
       b.classList.add('busy');
       callService('light', 'toggle', {}, { entity_id: s.entity_id }).catch(function () {}).then(function () { b.classList.remove('busy'); });
     });
+    document.addEventListener('keydown', function (e) {
+      var b = e.target.closest && e.target.closest('.lamp'); if (!b || (e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault(); callService('light', 'toggle', {}, { entity_id: b.dataset.entity }).catch(function () {});
+    });
   })();
 
-  function renderOverview(m) {
-    var el = $('lights'); el.innerHTML = '';
-    var groups = m.rooms.filter(function (r) { return r.lights.length; }).map(function (r) { return { name: r.name, lights: r.lights }; });
-    var loose = m.lights.filter(function (l) { return !l.room; });
-    if (loose.length) groups.push({ name: 'Ohne Raum', lights: loose });
-    groups.forEach(function (g) {
-      var on = g.lights.filter(function (l) { return l.s.state === 'on'; }).length;
-      var d = document.createElement('div'); d.className = 'lgroup';
-      d.innerHTML = '<h3 class="glabel">' + esc(g.name) + (on ? '<span>' + on + ' an</span>' : '') + '</h3>';
-      var grid = document.createElement('div'); grid.className = 'lights';
-      g.lights.forEach(function (l) { grid.appendChild(lightBtn(l, false, true)); });
-      d.appendChild(grid); el.appendChild(d);
-    });
-    if (!m.lights.length) el.innerHTML = '<div class="empty">Keine Lampen gefunden.</div>';
+  // Grenzwert für Feuchte-Hinweise: derselbe Helfer wie in der Automation „Lüften: Hinweis bei hoher Feuchte“
+  // (input_number.luftfeuchte_grenze_<raum>, z. B. _bad für Badezimmer). Ohne Helfer gibt es für den Raum keinen Hinweis.
+  function slug(n) { return n.toLowerCase().replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''); }
+  function humLimit(m, r) {
+    var sl = slug(r.name), k = Object.keys(m.humLimit).filter(function (x) { return sl === x || sl.indexOf(x) === 0; }).sort(function (a, b) { return b.length - a.length; })[0];
+    return k ? num(m.humLimit[k]) : null;
+  }
+  function tooWet(m, r) { var h = num(r.hum), g = humLimit(m, r); return h != null && g != null && h > g; }
 
+  function renderOverview(m) {
     var on = m.lights.filter(function (l) { return l.s.state === 'on'; }).length;
     var temps = m.rooms.map(function (r) { return num(r.temp); }).filter(function (v) { return v != null; });
     var hums = m.rooms.map(function (r) { return num(r.hum); }).filter(function (v) { return v != null; });
     var open = m.contacts.filter(function (c) { return c.s.state === 'on'; });
     var avg = function (a) { return a.reduce(function (x, y) { return x + y; }, 0) / a.length; };
-    $('sLights').textContent = on + '/' + m.lights.length;
+    $('sLights').textContent = on + ' / ' + m.lights.length;
     $('sTemp').textContent = temps.length ? fmt1(avg(temps)) + '°' : '–';
-    $('sHum').textContent = hums.length ? Math.round(avg(hums)) + ' %' : '–';
-    var warm = m.rooms.filter(function (r) { return num(r.temp) != null; }).sort(function (a, b) { return num(b.temp) - num(a.temp); })[0];
-    var wet = m.rooms.filter(function (r) { return num(r.hum) != null; }).sort(function (a, b) { return num(b.hum) - num(a.hum); })[0];
-    $('sClimNote').innerHTML = (warm ? '<span title="wärmster Raum">↑ ' + esc(warm.name) + ' ' + fmt1(num(warm.temp)) + '°</span>' : '') + (wet ? '<span title="feuchtester Raum">💧 ' + esc(wet.name) + ' ' + Math.round(num(wet.hum)) + ' %</span>' : '');
+    $('sHum').textContent = hums.length ? Math.round(avg(hums)) + ' %' : '';
+    var wet = m.rooms.filter(function (r) { return tooWet(m, r); });
+    $('sClimNote').textContent = wet.length === 1 ? wet[0].name + ' lüften' : wet.length ? wet.length + ' Räume lüften' : 'Ø Wohnung';
+    $('sClimNote').title = wet.map(function (r) { return r.name; }).join(', ');
     $('sOpen').textContent = m.contacts.length ? open.length : '–';
+    $('sOpenL').textContent = open.length ? 'offen' : m.contacts.length ? 'alles zu' : 'Fenster';
     $('sOpenBox').classList.toggle('warn', open.length > 0);
+
+    // Bewohner: Personen aus HA, klein und dezent
+    $('residents').innerHTML = m.persons.map(function (p) {
+      var home = p.state === 'home', n = name(p);
+      var where = home ? 'zu Hause' : p.state === 'not_home' ? 'unterwegs' : unavailable(p) ? 'unbekannt' : p.state;
+      return '<span class="who' + (home ? ' home' : '') + '"><span class="av" aria-hidden="true">' + esc(n.charAt(0).toUpperCase()) + '</span><span><b>' + esc(n) + '</b> · ' + esc(where)
+        + (!home && p.last_changed && !unavailable(p) ? ' seit ' + esc(timeText(p.last_changed)) : '') + '</span></span>';
+    }).join('');
 
     var st = $('status');
     if (open.length) {
       st.className = 'status alert';
-      st.innerHTML = '<span class="big">🪟</span><div><b>' + esc(open.map(function (c) { return name(c.s); }).join(', ')) + ' offen</b><small>'
+      st.innerHTML = '<span class="big">' + ic('window') + '</span><div><b>' + esc(open.map(function (c) { return name(c.s); }).join(', ')) + ' offen</b><small>'
         + esc(open.map(function (c) { return 'seit ' + timeText(c.s.last_changed) + ' · ' + ago(c.s.last_changed) + (c.room && c.room.temp && num(c.room.temp) != null ? ' · ' + fmt1(num(c.room.temp)) + ' °C' : ''); }).join(' · ')) + '</small></div>';
-    } else if (m.contacts.length) {
-      st.className = 'status';
-      st.innerHTML = '<span class="big">🔒</span><div><b>Alles zu</b><small>' + esc(m.contacts.map(function (c) { return name(c.s); }).join(', ')) + ' geschlossen</small></div>';
     } else {
       var lastMotion = m.rooms.reduce(function (acc, r) { return acc.concat(r.motions); }, []).sort(function (a, b) { return a.last_changed < b.last_changed ? 1 : -1; })[0];
       st.className = 'status';
-      st.innerHTML = '<span class="big">🏡</span><div><b>Alles ruhig</b><small>' + (lastMotion ? esc(name(lastMotion)) + ': ' + (lastMotion.state === 'on' ? 'Bewegung jetzt' : 'zuletzt ' + timeText(lastMotion.last_changed)) + ' · ' : '')
-        + 'Tür-/Fenstersensoren folgen</small></div>';
+      st.innerHTML = '<span class="big">' + ic(m.contacts.length ? 'lock' : 'home') + '</span><div><b>' + (m.contacts.length ? 'Alles zu' : 'Alles ruhig') + '</b><small>'
+        + (lastMotion ? esc(name(lastMotion)) + ': ' + (lastMotion.state === 'on' ? 'Bewegung jetzt' : 'zuletzt ' + timeText(lastMotion.last_changed)) : m.contacts.length + ' Fenster und Türen geschlossen') + '</small></div>';
     }
 
     // Hinweise
@@ -452,8 +516,7 @@
         notes.push({ cls: 'crit', t: r.name + ': kühlt aus', d: name(c.s) + ' offen, ' + fmt1(h[0][1] - t) + ' °C kälter als vor 12 Stunden.' });
     });
     m.rooms.forEach(function (r) {
-      var h = num(r.hum);
-      if (h != null && h >= 65) notes.push({ cls: '', t: r.name + ': ' + Math.round(h) + ' % Luftfeuchte', d: 'Lüften, damit sich kein Schimmel bildet.' });
+      if (tooWet(m, r)) notes.push({ cls: '', t: r.name + ': ' + Math.round(num(r.hum)) + ' % Luftfeuchte', d: 'Über der Grenze von ' + Math.round(humLimit(m, r)) + ' %. Lüften, damit sich kein Schimmel bildet.' });
     });
     Object.keys(m.batteries).forEach(function (d) {
       var b = num(m.batteries[d]);
@@ -472,37 +535,203 @@
     var warnCount = notes.filter(function (n) { return n.cls !== 'info'; }).length;
     $('noteCount').textContent = warnCount ? warnCount + ' offen' : notes.length ? notes.length + ' Infos' : 'nichts zu tun';
 
-    // Szenen: eigene Auswahl und Reihenfolge dieses Geräts, „Alles aus“ hervorgehoben
-    $('scenes').innerHTML = favScenes().map(function (id) {
-      if (id === '__off') return '<button class="scene off" type="button" data-scene="__off"><i>⏻</i>Alles aus</button>';
-      var sc = S[id];
-      return '<button class="scene" type="button" data-scene="' + esc(id) + '"><i>' + sceneIcon(name(sc)) + '</i>' + esc(name(sc)) + '</button>';
-    }).join('') || '<div class="empty">Keine Szenen gewählt.</div>';
-
+    renderPlan(m);
     renderWeather(m);
-    $('heatBox').hidden = !m.climates.length && !m.heatTpl.length;
-    if (m.climates.length || m.heatTpl.length) {
-      $('heat').innerHTML = m.climates.map(function (c) { return heatRow(c.s, c.room ? c.room.name : ''); }).join('')
-        + (m.heatTpl.length ? '<h3 class="sub-h">Vorlagen</h3><div class="scenes room">' + m.heatTpl.slice().sort(function (a, b) { return name(a).localeCompare(name(b), 'de'); }).map(function (b) {
-          return '<button class="scene" type="button" data-press="' + esc(b.entity_id) + '"' + (unavailable(b) && b.state === 'unavailable' ? ' disabled' : '') + '><i>🌡️</i>' + esc(name(b)) + '</button>';
-        }).join('') + '</div>' : '');
-      var heating = m.climates.filter(function (c) { return c.s.attributes.hvac_action === 'heating'; }).length;
-      $('heatCount').textContent = heating ? heating + ' heizt' : '';
-    }
-
-    // Durchsage: Auswahlmenü statt Knopfreihe
+    renderHeat(m);
     var echos = m.echos.filter(function (e) { return !unavailable(e.s); });
-    $('sayBox').hidden = !echos.length;
-    if (echos.length) {
-      var sel = $('sayTarget'), cur = sel.value || 'alle';
-      var single = echos.filter(function (e) { return e.room && !isGroup(e.s); }), groups = echos.filter(function (e) { return isGroup(e.s) || !e.room; });
-      sel.innerHTML = '<option value="alle">Alle Echos</option>'
-        + (single.length ? '<optgroup label="Räume">' + single.map(function (e) { return '<option value="' + esc(e.s.entity_id) + '">' + esc(e.room.name) + '</option>'; }).join('') + '</optgroup>' : '')
-        + (groups.length ? '<optgroup label="Gruppen">' + groups.map(function (e) { return '<option value="' + esc(e.s.entity_id) + '">' + esc(name(e.s)) + '</option>'; }).join('') + '</optgroup>' : '');
-      sel.value = cur; if (!sel.value) sel.value = 'alle';
-    }
+    renderSay(m, echos);
     renderMusic(m, echos);
+    renderEchos(m);
     renderVacuum(m);
+    if (current === 'energie') renderEnergy(m);
+  }
+
+  // ---------- Grundriss der Wohnung (nach Stefans Plan, Einheiten = Pixel des Original-Bilds) ----------
+  // Räume über den Bereichsnamen in HA. Lampen und Kontakte werden den eingezeichneten Plätzen zugeordnet:
+  // Lampen nach Name sortiert auf die Plätze des Raums (PLAN_LAMP legt einzelne Lampen fest), Fenster mit „links“/„rechts“ im Namen
+  // auf den linken/rechten Flügel, Türen auf die eingezeichneten Außentüren.
+  var PLAN = {
+    schlafzimmer: { d: 'M42 38H165V20H288V532H42Z', at: [160, 150], lamps: [[240, 84], [168, 293], [86, 494], [200, 420]], win: [[178, 20, 278, 20]] },
+    kuche: { d: 'M288 62H505V425H288Z', at: [396, 150], lamps: [[465, 257], [380, 330]], win: [[345, 62, 445, 62]] },
+    badezimmer: { d: 'M505 62H660V370H505Z', at: [582, 150], short: 'Bad', narrow: true, lamps: [[540, 330], [610, 250]], win: [[532, 62, 632, 62]] },
+    toilette: { d: 'M660 88H757V270H660Z', at: [708, 140], short: 'WC', narrow: true, lamps: [[708, 235]], win: [[688, 88, 748, 88]] },
+    flur: { d: 'M288 425H505V370H660V270H757V532H288Z', at: [420, 470], lamps: [[525, 500], [615, 500], [708, 330]], door: [{ x1: 757, y1: 523, x2: 757, y2: 445, leaf: 'M757 523 L683 523 A74 74 0 0 1 757 449 Z', lx: 683, ly: 523 }] },
+    buro: { d: 'M42 532H452V880H42Z', at: [250, 600], lamps: [[190, 685], [170, 758], [300, 732], [360, 640]], win: [[162, 880, 253, 880], [253, 880, 345, 880]] },
+    wohnzimmer: { d: 'M452 532H845V948H440V880H452Z', at: [648, 745], lamps: [[496, 573], [736, 620], [689, 838], [806, 838], [600, 660]], win: [[542, 948, 634, 948], [634, 948, 724, 948]],
+      door: [{ x1: 440, y1: 943, x2: 440, y2: 887, leaf: 'M440 943 L498 943 A56 56 0 0 0 440 887 Z', lx: 498, ly: 943 }] }
+  };
+  var PLAN_OUT = [{ d: 'M42 880H440V985H42Z', at: [240, 940], name: 'Balkon' }];
+  var PLAN_IDOOR = ['M288 442V522', 'M356 425H440', 'M660 282V362', 'M668 270H749', 'M312 532H395', 'M594 532H676'];
+  var PLAN_LAMP = {}; // z. B. 'light.wohnzimmer_stehlampe': [806, 838]
+  var planHtml = '';
+
+  function renderPlan(m) {
+    var rooms = '', over = '', lamps = '', lit = 0, openN = 0;
+    m.rooms.forEach(function (r) {
+      var P = PLAN[slug(r.name)]; if (!P) return;
+      var anyOn = r.lights.some(function (l) { return l.s.state === 'on'; });
+      rooms += '<path class="room' + (anyOn ? ' lit' : '') + '" d="' + P.d + '" data-plan-room="' + esc(r.id) + '"><title>' + esc(r.name) + '</title></path>';
+      // Beschriftung: Name, darunter Temperatur und Feuchte (rot über dem Lüften-Grenzwert)
+      var t = num(r.temp), h = num(r.hum), wet = tooWet(m, r), x = P.at[0], y = P.at[1];
+      var motion = r.motions.some(function (s) { return s.state === 'on'; });
+      over += '<text class="rname" x="' + x + '" y="' + y + '">' + esc(P.short || r.name) + '</text>';
+      if (motion) over += '<circle class="motion" cx="' + (x + (P.short || r.name).length * 8 + 14) + '" cy="' + (y - 9) + '" r="7"><title>Bewegung</title></circle>';
+      var tv = t != null ? fmt1(t) + '°' : '', hv = h != null ? Math.round(h) + ' %' : '';
+      if (P.narrow) {
+        if (tv) over += '<text class="rval" x="' + x + '" y="' + (y + 34) + '">' + tv + '</text>';
+        if (hv) over += '<text class="rval' + (wet ? ' hot' : '') + '" x="' + x + '" y="' + (y + 64) + '">' + hv + '</text>';
+      } else if (tv || hv) {
+        over += '<text class="rval" x="' + x + '" y="' + (y + 34) + '">' + tv + (tv && hv ? ' · ' : '') + (hv ? '<tspan class="rval' + (wet ? ' hot' : '') + '">' + hv + '</tspan>' : '') + '</text>';
+      }
+      // Fenster: links/rechts nach Namen, Rest der Reihe nach
+      var wins = (P.win || []).map(function () { return null; }), doors = (P.door || []).map(function () { return null; });
+      var cs = r.contacts.slice().sort(function (a, b) { return name(a.s).localeCompare(name(b.s), 'de'); });
+      cs.filter(function (c) { return !isDoor(c.s); }).forEach(function (c) {
+        var n = name(c.s).toLowerCase(), i = /links/.test(n) ? 0 : /rechts/.test(n) ? wins.length - 1 : wins.indexOf(null);
+        if (i < 0 || wins[i]) i = wins.indexOf(null);
+        if (i > -1) wins[i] = c.s;
+      });
+      cs.filter(function (c) { return isDoor(c.s); }).forEach(function (c) { var i = doors.indexOf(null); if (i > -1) doors[i] = c.s; });
+      (P.win || []).forEach(function (w, i) {
+        var s = wins[i], cls = !s ? 'none' : unavailable(s) ? 'unk' : s.state === 'on' ? 'open' : '';
+        if (s && s.state === 'on') openN++;
+        over += '<line class="win ' + cls + '" x1="' + w[0] + '" y1="' + w[1] + '" x2="' + w[2] + '" y2="' + w[3] + '">' + (s ? '<title>' + esc(name(s)) + ': ' + (cls === 'open' ? 'offen' : cls === 'unk' ? 'nicht erreichbar' : 'zu') + '</title>' : '') + '</line>'
+          + '<line class="win-in" x1="' + w[0] + '" y1="' + w[1] + '" x2="' + w[2] + '" y2="' + w[3] + '"/>';
+      });
+      (P.door || []).forEach(function (d, i) {
+        var s = doors[i], isOpen = s && s.state === 'on', cls = !s ? 'none' : unavailable(s) ? 'unk' : isOpen ? 'open' : '';
+        if (isOpen) { openN++; over += '<path class="swing" d="' + d.leaf + '"/><line class="leaf" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.lx + '" y2="' + d.ly + '"/>'; }
+        over += '<line class="win ' + cls + '" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.x2 + '" y2="' + d.y2 + '">' + (s ? '<title>' + esc(name(s)) + ': ' + (isOpen ? 'offen' : 'zu') + '</title>' : '') + '</line>';
+      });
+      // Lampen
+      var spots = P.lamps.slice(), used = {};
+      r.lights.slice().sort(function (a, b) { return name(a.s).localeCompare(name(b.s), 'de'); }).forEach(function (l) {
+        var pos = PLAN_LAMP[l.s.entity_id];
+        if (!pos) { pos = spots.filter(function (p) { return !used[p]; })[0]; }
+        if (!pos) return;
+        used[pos] = 1;
+        var i = lightInfo(l.s); if (i.on) lit++;
+        lamps += '<g class="lamp' + (i.on ? ' on' : '') + (i.off ? ' off-line' : '') + '" data-entity="' + esc(l.s.entity_id) + '" role="button" tabindex="0" aria-label="' + esc(name(l.s)) + ': ' + (i.off ? 'nicht erreichbar' : i.on ? 'an ' + i.lvl + ' %' : 'aus') + '"'
+          + (i.on ? ' style="--lc:' + esc(l.s.attributes.rgb_color ? i.col : 'var(--lamp)') + '"' : '') + ' transform="translate(' + pos[0] + ' ' + pos[1] + ')">'
+          + '<circle class="glow" r="' + (40 + i.lvl * .5) + '"/><circle class="hit" r="34"/><circle class="bulb" r="15"/><title>' + esc(name(l.s)) + '</title></g>';
+      });
+    });
+    var outs = PLAN_OUT.map(function (o) { return '<path class="room out" d="' + o.d + '"/>'; }).join('');
+    var outT = PLAN_OUT.map(function (o) { return '<text class="rname out-name" x="' + o.at[0] + '" y="' + o.at[1] + '">' + esc(o.name) + '</text>'; }).join('');
+    var html = '<svg viewBox="26 6 838 994" role="group" aria-label="Grundriss der Wohnung mit Lampen, Fenstern und Türen">'
+      + '<defs><radialGradient id="lampGlow"><stop offset="0" style="stop-color:var(--lamp-glow)"/><stop offset="1" style="stop-color:var(--lamp-glow);stop-opacity:0"/></radialGradient></defs>'
+      + outs + rooms + PLAN_IDOOR.map(function (d) { return '<path class="idoor" d="' + d + '"/>'; }).join('') + over + outT + lamps + '</svg>';
+    $('planCount').textContent = lit + ' Licht an · ' + openN + ' offen';
+    if (html !== planHtml) { planHtml = html; $('plan').innerHTML = html; }
+  }
+  document.addEventListener('click', function (e) {
+    var r = e.target.closest('[data-plan-room]'); if (!r) return;
+    lsSet(LS_ROOM, r.dataset.planRoom); go('raeume');
+  });
+
+  // ---------- Energieverbrauch (Steckdosen mit Strommessung, z. B. FRITZ!DECT 200 „Rechner“) ----------
+  var ERANGE = { '24h': { label: '24 h', ms: 864e5, period: 'hour' }, '7d': { label: '7 Tage', ms: 7 * 864e5, period: 'day' }, '30d': { label: '30 Tage', ms: 30 * 864e5, period: 'day' } };
+  var eCache = {}, eLoading = {};
+  // Verbrauch je Stunde/Tag aus der Langzeitstatistik (Typ „change“ des Zählers in kWh)
+  function loadEnergy(id, range) {
+    var key = range + '|' + id, c = eCache[key];
+    if (c && Date.now() - c.at < 5 * 60000) return c.data;
+    if (eLoading[key]) return c ? c.data : null;
+    eLoading[key] = true;
+    var R = ERANGE[range], start = new Date(Date.now() - R.ms);
+    if (R.period === 'day') start.setHours(0, 0, 0, 0); else start.setMinutes(0, 0, 0);
+    send({ type: 'recorder/statistics_during_period', start_time: start.toISOString(), statistic_ids: [id], period: R.period, types: ['change'], units: { energy: 'kWh' } })
+      .then(function (res) { eCache[key] = { at: Date.now(), data: (res[id] || []).map(function (p) { return { t: typeof p.start === 'number' ? p.start : new Date(p.start).getTime(), v: Math.max(0, p.change || 0) }; }) }; })
+      .catch(function () { eCache[key] = { at: Date.now(), data: [] }; })
+      .then(function () { delete eLoading[key]; queueRender(); });
+    return c ? c.data : null;
+  }
+  function kwh(v) { return v == null ? '–' : (v < 10 ? v.toLocaleString('de-DE', { maximumFractionDigits: 2, minimumFractionDigits: 2 }) : Math.round(v).toLocaleString('de-DE')); }
+  function barChart(pts, range) {
+    if (!pts.length) return '<div class="cload">Noch keine Verbrauchsdaten für diesen Zeitraum.</div>';
+    var max = Math.max.apply(null, pts.map(function (p) { return p.v; })) || 0.01, hourly = ERANGE[range].period === 'hour';
+    var lab = function (t) { return hourly ? new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr' : new Date(t).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' }); };
+    var total = pts.reduce(function (a, p) { return a + p.v; }, 0), last = pts.length - 1;
+    var xl = function (t) { return hourly ? new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : new Date(t).toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric' }); };
+    return '<div class="chart" style="--cc:var(--p1)"><h4>Verbrauch ' + (hourly ? 'je Stunde' : 'je Tag') + '<span>Summe ' + kwh(total) + ' kWh · Ø ' + kwh(total / pts.length) + ' kWh</span></h4>'
+      + '<div class="cgrid"><div class="yax"><span style="top:0%">' + kwh(max) + '</span><span style="top:50%">' + kwh(max / 2) + '</span><span style="top:100%">0</span></div>'
+      + '<div class="plot" data-barplot><div class="gl" style="top:0"></div><div class="gl" style="top:50%"></div><div class="bars">' + pts.map(function (p, i) {
+        return '<i' + (i === last ? ' class="today"' : '') + ' style="height:' + Math.max(1, p.v / max * 100).toFixed(1) + '%" data-tip="' + esc(lab(p.t) + ' · ' + kwh(p.v) + ' kWh') + '"></i>';
+      }).join('') + '</div></div>'
+      + '<div class="xax"><span>' + xl(pts[0].t) + '</span><span>' + (hourly ? 'jetzt' : 'heute') + '</span></div></div></div>';
+  }
+  document.addEventListener('pointermove', function (e) {
+    var plot = e.target.closest && e.target.closest('[data-barplot]'); if (!plot) return;
+    var bars = plot.querySelectorAll('.bars i'), r = plot.getBoundingClientRect(), x = e.clientX - r.left;
+    var i = Math.max(0, Math.min(bars.length - 1, Math.floor(x / r.width * bars.length))), b = bars[i]; if (!b) return;
+    plot.querySelectorAll('.bars i.hl').forEach(function (n) { n.classList.remove('hl'); }); b.classList.add('hl');
+    var tip = plot.querySelector('.tip') || plot.appendChild(Object.assign(document.createElement('div'), { className: 'tip' }));
+    tip.textContent = b.dataset.tip; tip.style.left = Math.max(18, Math.min(82, (i + .5) / bars.length * 100)) + '%';
+  });
+  document.addEventListener('pointerout', function (e) {
+    var p = e.target.closest && e.target.closest('[data-barplot]');
+    if (p && !p.contains(e.relatedTarget)) { p.querySelectorAll('.tip').forEach(function (n) { n.remove(); }); p.querySelectorAll('.hl').forEach(function (n) { n.classList.remove('hl'); }); }
+  });
+
+  function renderEnergy(m) {
+    var el = $('energy'), byDev = {};
+    m.power.forEach(function (s) { var d = reg(s.entity_id).device; (byDev[d] = byDev[d] || { dev: d }).power = byDev[d].power || s; });
+    m.energy.forEach(function (s) { var d = reg(s.entity_id).device; (byDev[d] = byDev[d] || { dev: d }).energy = byDev[d].energy || s; });
+    var list = Object.keys(byDev).map(function (k) { return byDev[k]; }).sort(function (a, b) { return devName(a.dev).localeCompare(devName(b.dev), 'de'); });
+    if (!list.length) { el.innerHTML = '<section class="box empty">Keine Steckdose mit Strommessung gefunden.</section>'; return; }
+    var range = rangeOf('energy');
+    el.innerHTML = list.map(function (x) {
+      var p = x.power, en = x.energy, w = num(p), room = areaOf((p || en).entity_id);
+      var html = '<section class="box"><div class="box-head"><h2>' + ic('plug') + esc(devName(x.dev) || name(p || en)) + '</h2><span class="count">' + esc(room && areas[room] ? areas[room].name : '') + '</span></div>';
+      var today = null, data = en ? loadEnergy(en.entity_id, range) : null, todayData = en ? loadEnergy(en.entity_id, '24h') : null;
+      if (todayData) { var mid = new Date(); mid.setHours(0, 0, 0, 0); today = todayData.filter(function (q) { return q.t >= mid.getTime(); }).reduce(function (a, q) { return a + q.v; }, 0); }
+      html += '<div class="energy-now">'
+        + '<div><div class="v">' + (w == null ? '–' : (w < 10 ? fmt1(w) : Math.round(w).toLocaleString('de-DE'))) + '<small>W</small></div><div class="k">Leistung jetzt</div></div>'
+        + (en ? '<div><div class="v">' + kwh(today) + '<small>kWh</small></div><div class="k">Heute</div></div>' : '')
+        + (en && num(en) != null ? '<div><div class="v">' + kwh(num(en)) + '<small>kWh</small></div><div class="k">Zählerstand</div></div>' : '') + '</div>';
+      html += '<div style="margin-top:12px">' + rangeChips('energy') + '</div>';
+      if (en) html += data ? barChart(data, range) : '<div class="cload">Verbrauch wird geladen …</div>';
+      if (p) html += chartsFor([p.entity_id], 'energy', function () { return { title: 'Leistung', unit: 'W', col: 'var(--p1)', dec: 0 }; });
+      return html + '</section>';
+    }).join('') + '<p class="hint">Werte aus der Langzeitstatistik von Home Assistant. Die Steckdose misst nur, sie wird hier nie geschaltet.</p>';
+  }
+
+  // ---------- Heizung (eigene Seite) ----------
+  function renderHeat(m) {
+    $('heat').innerHTML = m.climates.length ? m.climates.map(function (c) { return heatRow(c.s, c.room ? c.room.name : ''); }).join('')
+      : '<div class="empty">Keine Thermostate in Home Assistant gefunden.</div>';
+    var heating = m.climates.filter(function (c) { return c.s.attributes.hvac_action === 'heating'; }).length;
+    $('heatCount').textContent = m.climates.length ? (heating ? heating + ' heizt' : 'keins heizt') : '';
+    $('heatTplBox').hidden = !m.heatTpl.length;
+    $('heatTpl').innerHTML = m.heatTpl.slice().sort(function (a, b) { return name(a).localeCompare(name(b), 'de'); }).map(function (b) {
+      return '<button class="scene" type="button" data-press="' + esc(b.entity_id) + '"' + (b.state === 'unavailable' ? ' disabled' : '') + '>' + ic('thermo') + esc(name(b)) + '</button>';
+    }).join('');
+  }
+
+  // ---------- Multimedia: Durchsage, Musik, Echos ----------
+  function renderSay(m, echos) {
+    $('sayBox').hidden = !echos.length;
+    if (!echos.length) return;
+    var sel = $('sayTarget'), cur = sel.value || 'alle';
+    if (document.activeElement === sel) return;
+    var single = echos.filter(function (e) { return e.room && !isGroup(e.s); }), groups = echos.filter(function (e) { return isGroup(e.s) || !e.room; });
+    sel.innerHTML = '<option value="alle">Alle Echos</option>'
+      + (single.length ? '<optgroup label="Räume">' + single.map(function (e) { return '<option value="' + esc(e.s.entity_id) + '">' + esc(e.room.name) + '</option>'; }).join('') + '</optgroup>' : '')
+      + (groups.length ? '<optgroup label="Gruppen">' + groups.map(function (e) { return '<option value="' + esc(e.s.entity_id) + '">' + esc(name(e.s)) + '</option>'; }).join('') + '</optgroup>' : '');
+    sel.value = cur; if (!sel.value) sel.value = 'alle';
+  }
+  function renderEchos(m) {
+    var list = m.echos.filter(function (e) { return e.room && !isGroup(e.s); });
+    $('echoBox').hidden = !list.length;
+    if (!list.length) return;
+    var playing = list.filter(function (e) { return e.s.state === 'playing'; }).length;
+    $('echoCount').textContent = list.length + ' Geräte' + (playing ? ' · ' + playing + ' spielt' : '');
+    $('echos').innerHTML = list.map(function (e) {
+      var a = e.s.attributes || {}, off = unavailable(e.s);
+      return '<div class="row"><span class="ico">' + ic(e.room.icon) + '</span><div class="txt"><b>' + esc(e.room.name) + '</b><small>'
+        + esc(off ? 'nicht erreichbar' : e.s.state === 'playing' ? 'spielt ' + (a.media_title || '') : 'bereit') + '</small></div>'
+        + (a.volume_level != null ? '<span class="dval">' + Math.round(a.volume_level * 100) + ' %</span>' : '') + '</div>';
+    }).join('');
   }
   function isGroup(s) { return /^x\d|gruppe|überall|ueberall|\+/i.test(name(s)) || (s.attributes && s.attributes.member_ids); }
 
@@ -513,31 +742,30 @@
     return echos.filter(function (e) { return e.s.entity_id === id; })[0] || playing || echos[0];
   }
   function renderMusic(m, echos) {
-    $('musicBox').hidden = !echos.length && !m.spotify;
     if (!echos.length && !m.spotify) return;
     var sp = speaker(echos), a = sp ? sp.s.attributes : {}, conf = lsGet(LS_CONN) || {}, base = (conf.url || '').replace(/\/+$/, '');
     var playingNow = echos.filter(function (e) { return e.s.state === 'playing'; });
-    $('musicCount').textContent = playingNow.length ? '▶ ' + playingNow.length + ' spielt' : '';
+    $('musicCount').textContent = playingNow.length ? playingNow.length + ' spielt' : '';
     var opts = echos.map(function (e) { return '<option value="' + esc(e.s.entity_id) + '"' + (sp && e.s.entity_id === sp.s.entity_id ? ' selected' : '') + '>' + (e.s.state === 'playing' ? '▶ ' : '') + esc(e.room && !isGroup(e.s) ? e.room.name : name(e.s)) + '</option>'; }).join('');
     var html = '';
     if (sp) {
       var on = sp.s.state === 'playing';
       html += '<div class="np">' + (a.entity_picture ? '<img alt="" src="' + esc((/^https?:/.test(a.entity_picture) ? '' : base) + a.entity_picture) + '">' : '<img alt="" src="icon.svg">')
         + '<div class="txt"><b>' + esc(a.media_title || (on ? 'Spielt' : 'Nichts läuft')) + '</b><small>' + esc([a.media_artist, a.source].filter(Boolean).join(' · ') || 'Lautsprecher wählen und Musik starten') + '</small></div></div>'
-        + '<div class="ctl"><select data-speaker aria-label="Lautsprecher">' + opts + '</select>'
-        + '<button class="icon-btn" type="button" data-mp="media_previous_track" aria-label="Zurück">⏮</button>'
-        + '<button class="icon-btn" type="button" data-mp="' + (on ? 'media_pause' : 'media_play') + '" aria-label="' + (on ? 'Pause' : 'Abspielen') + '">' + (on ? '⏸' : '▶️') + '</button>'
-        + '<button class="icon-btn" type="button" data-mp="media_next_track" aria-label="Weiter">⏭</button></div>'
+        + '<div class="mctl"><select data-speaker aria-label="Lautsprecher">' + opts + '</select>'
+        + '<button class="icon-btn" type="button" data-mp="media_previous_track" aria-label="Zurück">' + ic('prev') + '</button>'
+        + '<button class="icon-btn" type="button" data-mp="' + (on ? 'media_pause' : 'media_play') + '" aria-label="' + (on ? 'Pause' : 'Abspielen') + '">' + ic(on ? 'pause' : 'play') + '</button>'
+        + '<button class="icon-btn" type="button" data-mp="media_next_track" aria-label="Weiter">' + ic('next') + '</button></div>'
         + '<div class="slider"><label for="mpVol"><span>Lautstärke</span><span>' + (a.volume_level != null ? Math.round(a.volume_level * 100) + ' %' : '') + '</span></label><input type="range" id="mpVol" min="0" max="100" step="5" value="' + Math.round((a.volume_level || 0) * 100) + '"></div>'
-        + '<form class="say" data-spotify><input type="text" placeholder="Spotify: Playlist, Künstler oder Song" aria-label="Was soll Spotify spielen?"><button class="btn" type="submit" aria-label="Auf Spotify abspielen">▶</button></form>';
+        + '<form class="say" data-spotify><input type="text" placeholder="Spotify: Playlist, Künstler oder Song" aria-label="Was soll Spotify spielen?"><button class="btn" type="submit" aria-label="Auf Spotify abspielen">' + ic('play') + '</button></form>';
     }
     if (m.spotify && (m.spotify.attributes.source_list || []).length) {
       var sa = m.spotify.attributes;
-      html += '<div class="ctl"><span class="noclim" style="white-space:nowrap">Spotify spielt auf</span><select data-spsource aria-label="Spotify-Gerät">'
+      html += '<div class="mctl"><span class="noclim" style="white-space:nowrap">Spotify spielt auf</span><select data-spsource aria-label="Spotify-Gerät">'
         + sa.source_list.map(function (x) { return '<option' + (x === sa.source ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></div>';
     }
     if (playingNow.length > 1 || (playingNow.length === 1 && sp && playingNow[0] !== sp)) html += '<div class="playing">' + playingNow.map(function (e) {
-      return '<div class="noclim">▶ ' + esc(e.room && !isGroup(e.s) ? e.room.name : name(e.s)) + ': ' + esc(e.s.attributes.media_title || 'spielt') + '</div>'; }).join('') + '</div>';
+      return '<div class="noclim">' + ic('play') + esc(e.room && !isGroup(e.s) ? e.room.name : name(e.s)) + ': ' + esc(e.s.attributes.media_title || 'spielt') + '</div>'; }).join('') + '</div>';
     var box = $('music'), focus = document.activeElement && box.contains(document.activeElement);
     if (!focus) box.innerHTML = html; // nicht neu zeichnen, während getippt oder geschoben wird
   }
@@ -571,23 +799,23 @@
       var batt = a.battery_level != null ? a.battery_level : num(m.batteries[dev]);
       var busy = st === 'cleaning' || st === 'returning';
       var info = [VAC[st] || st];
-      if (batt != null) info.push('🔋 ' + Math.round(batt) + ' %');
+      if (batt != null) info.push('Akku ' + Math.round(batt) + ' %');
       if (a.fan_speed) info.push('Saugstufe ' + a.fan_speed);
       if (a.cleaned_area != null && busy) info.push(a.cleaned_area + ' m²');
       if (a.error && a.error !== 'no_error' && st === 'error') info.push(a.error);
-      var h = '<div class="vac-top"><span class="ico" aria-hidden="true">🤖</span><div class="txt"><b>' + esc(devName(dev) || name(v)) + '</b><small>' + esc(info.join(' · ')) + '</small></div>'
+      var h = '<div class="vac-top">' + ic('vacuum') + '<div class="txt"><b>' + esc(devName(dev) || name(v)) + '</b><small>' + esc(info.join(' · ')) + '</small></div>'
         + '<span class="pill ' + (st === 'error' ? 'open' : busy ? 'warn' : 'ok') + '">' + esc(VAC[st] || st) + '</span></div>';
       h += '<div class="btnrow">'
-        + (st === 'cleaning' ? '<button class="btn" type="button" data-vac="pause" data-id="' + esc(v.entity_id) + '">⏸ Pause</button>' : '<button class="btn" type="button" data-vac="start" data-id="' + esc(v.entity_id) + '">▶ ' + (st === 'paused' ? 'Weiter' : 'Saugen') + '</button>')
-        + '<button class="btn ghost" type="button" data-vac="return_to_base" data-id="' + esc(v.entity_id) + '">🏠 Zur Station</button>'
-        + '<button class="btn ghost" type="button" data-vac="locate" data-id="' + esc(v.entity_id) + '">📍 Finden</button></div>';
-      if ((a.fan_speed_list || []).length) h += '<div class="ctl"><span class="noclim">Saugstufe</span><select data-fan="' + esc(v.entity_id) + '">' + a.fan_speed_list.map(function (f) { return '<option' + (f === a.fan_speed ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') + '</select></div>';
+        + (st === 'cleaning' ? '<button class="btn" type="button" data-vac="pause" data-id="' + esc(v.entity_id) + '">' + ic('pause') + 'Pause</button>' : '<button class="btn" type="button" data-vac="start" data-id="' + esc(v.entity_id) + '">' + ic('play') + (st === 'paused' ? 'Weiter' : 'Saugen') + '</button>')
+        + '<button class="btn ghost" type="button" data-vac="return_to_base" data-id="' + esc(v.entity_id) + '">' + ic('home') + 'Zur Station</button>'
+        + '<button class="btn ghost" type="button" data-vac="locate" data-id="' + esc(v.entity_id) + '">Finden</button></div>';
+      if ((a.fan_speed_list || []).length) h += '<div class="mctl"><span class="noclim">Saugstufe</span><select data-fan="' + esc(v.entity_id) + '">' + a.fan_speed_list.map(function (f) { return '<option' + (f === a.fan_speed ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') + '</select></div>';
       // Raumreinigung (Dreame/Xiaomi: Attribut „rooms“ mit Segment-IDs)
       var segs = vacRooms(a);
-      if (segs.length) h += '<div class="fsec' + (isFolded('vac-rooms') ? ' folded' : '') + '" data-fold-sec="vac-rooms"><h3 class="fh">Raum saugen<span class="chev">▾</span></h3><div class="scenes room">'
-        + segs.map(function (r) { return '<button class="scene" type="button" data-seg="' + esc(r.id) + '" data-id="' + esc(v.entity_id) + '"><i>🧹</i>' + esc(r.name) + '</button>'; }).join('') + '</div></div>';
+      if (segs.length) h += '<div class="fsec' + (isFolded('vac-rooms') ? ' folded' : '') + '" data-fold-sec="vac-rooms"><h3 class="fh">Raum saugen<span class="chev">' + ic('chev') + '</span></h3><div class="scenes room">'
+        + segs.map(function (r) { return '<button class="scene" type="button" data-seg="' + esc(r.id) + '" data-id="' + esc(v.entity_id) + '">' + ic('sparkle') + esc(r.name) + '</button>'; }).join('') + '</div></div>';
       var map = m.vacMaps && m.vacMaps[dev];
-      if (map && map.attributes.entity_picture) h += '<div class="fsec' + (isFolded('vac-map') ? ' folded' : '') + '" data-fold-sec="vac-map"><h3 class="fh">Karte<span class="chev">▾</span></h3><div class="vac-map"><img alt="Karte" loading="lazy" src="' + esc(base + map.attributes.entity_picture) + '"></div></div>';
+      if (map && map.attributes.entity_picture) h += '<div class="fsec' + (isFolded('vac-map') ? ' folded' : '') + '" data-fold-sec="vac-map"><h3 class="fh">Karte<span class="chev">' + ic('chev') + '</span></h3><div class="vac-map"><img alt="Karte" loading="lazy" src="' + esc(base + map.attributes.entity_picture) + '"></div></div>';
       return h;
     }).join('<hr style="border:0;border-top:1px solid var(--line);margin:14px 0">');
     var box = $('vac');
@@ -607,7 +835,7 @@
     if (sg) {
       var p = reg(sg.dataset.id).platform || 'dreame_vacuum';
       callService(p, 'vacuum_clean_segment', { segments: [isNaN(+sg.dataset.seg) ? sg.dataset.seg : +sg.dataset.seg] }, { entity_id: sg.dataset.id })
-        .then(function () { toast('Saugt jetzt: ' + sg.textContent.replace('🧹', '').trim()); }).catch(function () {});
+        .then(function () { toast('Saugt jetzt: ' + sg.textContent.trim()); }).catch(function () {});
     }
   });
   document.addEventListener('change', function (e) {
@@ -621,7 +849,7 @@
   function setFolded(k, v) { var f = lsGet(LS_FOLD) || {}; if (v) f[k] = 1; else delete f[k]; lsSet(LS_FOLD, f); }
   document.querySelectorAll('[data-fold]').forEach(function (box) {
     var head = box.querySelector('.box-head'); if (!head) return;
-    head.insertAdjacentHTML('beforeend', '<span class="chev" aria-hidden="true">▾</span>');
+    head.insertAdjacentHTML('beforeend', '<span class="chev" aria-hidden="true">' + ic('chev') + '</span>');
     head.setAttribute('role', 'button'); head.tabIndex = 0;
     box.classList.toggle('folded', isFolded(box.dataset.fold));
     head.setAttribute('aria-expanded', !isFolded(box.dataset.fold));
@@ -640,12 +868,12 @@
 
   function sceneIcon(n) {
     n = n.toLowerCase();
-    if (/morgen|wach|energ|konzentr|hell/.test(n)) return '☀️';
-    if (/abend|entspann|gemüt/.test(n)) return '🌆';
-    if (/film|kino|tv/.test(n)) return '🎬';
-    if (/nacht|schlaf|nachtlicht/.test(n)) return '🌙';
-    if (/lesen/.test(n)) return '📖';
-    return '✨';
+    if (/morgen|wach|energ|konzentr|hell/.test(n)) return ic('sun');
+    if (/abend|entspann|gemüt/.test(n)) return ic('sunset');
+    if (/film|kino|tv|fernseh/.test(n)) return ic('film');
+    if (/nacht|schlaf|nachtlicht|rot/.test(n)) return ic('moon');
+    if (/lesen/.test(n)) return ic('book');
+    return ic('sparkle');
   }
 
   function deviceProblems(m) {
@@ -684,11 +912,11 @@
       var on = x.lights.filter(function (l) { return l.s.state === 'on'; }).length;
       var t = num(x.temp), heat = x.climates.some(function (c) { return c.s.attributes.hvac_action === 'heating'; });
       var bits = [];
-      if (open) bits.push('🪟 offen');
+      if (open) bits.push('offen');
       if (t != null) bits.push(fmt1(t) + '°');
-      if (heat) bits.push('🔥');
-      if (on) bits.push('💡' + on);
-      return '<button class="rtile' + (open ? ' alert' : '') + '" type="button" data-room="' + esc(x.id) + '" aria-pressed="' + (x === r) + '"><i aria-hidden="true">' + x.icon + '</i><b>' + esc(x.name) + '</b><small>' + (bits.join(' · ') || '&nbsp;') + '</small></button>';
+      if (heat) bits.push('heizt');
+      if (on) bits.push(on + ' an');
+      return '<button class="rtile' + (open ? ' alert' : '') + '" type="button" data-room="' + esc(x.id) + '" aria-pressed="' + (x === r) + '">' + ic(x.icon) + '<b>' + esc(x.name) + '</b><small>' + (bits.join(' · ') || '&nbsp;') + '</small></button>';
     }).join('');
     det.innerHTML = '';
     det.appendChild(roomCard(r, m));
@@ -699,48 +927,48 @@
     var anyOpen = r.contacts.some(function (x) { return x.s.state === 'on'; });
     var bare = !r.lights.length && !r.temp && !r.hum && !r.contacts.length && !r.motions.length && !r.cams.length && !Object.keys(r.buttons).length && !r.echos.length && !r.climates.length;
     c.className = 'box room-card' + (anyOpen ? ' alert' : '');
-    var html = '<div class="room-head"><h2><span aria-hidden="true">' + r.icon + '</span>' + esc(r.name) + '</h2>'
-      + (r.echos.length ? '<span class="pill info">🔵 Echo</span>' : '') + '</div>';
+    var html = '<div class="room-head"><h2>' + ic(r.icon) + esc(r.name) + '</h2>'
+      + (r.echos.length ? '<span class="pill info">Echo</span>' : '') + '</div>';
     if (bare) { c.innerHTML = html + '<div class="noclim">Noch keine Geräte in diesem Raum.</div>'; return c; }
 
     var t = num(r.temp), h = num(r.hum);
     if (t != null || h != null) {
       var k = t == null ? '' : t >= 23 ? 'warm' : t < 19 ? 'cold' : '';
       html += '<div class="clim ' + k + '"><div>' + (t != null ? '<div class="t">' + fmt1(t) + '<small> °C</small></div>' : '')
-        + (h != null ? '<div class="h">💧 ' + Math.round(h) + ' %' + (h >= 65 ? ' · Lüften' : '') + '</div>' : '') + '</div><div></div></div>';
+        + '</div>' + (h != null ? '<div class="h' + (tooWet(m, r) ? ' wet' : '') + '">' + Math.round(h) + ' % Feuchte' + (tooWet(m, r) ? ' · Lüften' : '') + '</div>' : '') + '</div>';
       var ids = [r.temp, r.hum].filter(Boolean).map(function (x) { return x.entity_id; });
-      html += '<div class="fsec' + (isFolded('room-charts') ? ' folded' : '') + '" data-fold-sec="room-charts"><h3 class="fh">Verlauf<span class="chev">▾</span></h3>' + rangeChips('room') + chartsFor(ids, 'room', function (id) { return id === (r.temp && r.temp.entity_id) ? { title: 'Temperatur', unit: '°C', col: 'var(--p1)', dec: 1 } : { title: 'Luftfeuchte', unit: '%', col: 'var(--cool)', dec: 0 }; }) + '</div>';
+      html += '<div class="fsec' + (isFolded('room-charts') ? ' folded' : '') + '" data-fold-sec="room-charts"><h3 class="fh">Verlauf<span class="chev">' + ic('chev') + '</span></h3>' + rangeChips('room') + chartsFor(ids, 'room', function (id) { return id === (r.temp && r.temp.entity_id) ? { title: 'Temperatur', unit: '°C', col: 'var(--p1)', dec: 1 } : { title: 'Luftfeuchte', unit: '%', col: 'var(--cool)', dec: 0 }; }) + '</div>';
     } else if (r.temp) {
-      html += '<div class="noclim">🌡️ ' + esc(name(r.temp)) + ': nicht erreichbar</div>';
+      html += '<div class="noclim">' + ic('thermo') + esc(name(r.temp)) + ': nicht erreichbar</div>';
     }
     if (r.climates.length) html += '<div class="heat-list">' + r.climates.map(function (x) { return heatRow(x.s, r.name); }).join('') + '</div>';
     r.contacts.forEach(function (ct) {
       var s = ct.s, isOpen = s.state === 'on', off = unavailable(s);
       var b = num(m.batteries[reg(s.entity_id).device]);
-      html += '<div class="contact' + (isOpen ? ' open' : '') + '"><span aria-hidden="true">' + (dc(s) === 'window' ? '🪟' : '🚪') + '</span><div class="txt"><b>' + esc(name(s)) + '</b><small>'
+      html += '<div class="contact' + (isOpen ? ' open' : '') + '">' + ic(isDoor(s) ? 'door' : 'window') + '<div class="txt"><b>' + esc(name(s)) + '</b><small>'
         + (off ? 'nicht erreichbar' : (isOpen ? 'offen seit ' + timeText(s.last_changed) + ' · ' + ago(s.last_changed) : 'zu seit ' + timeText(s.last_changed))) + '</small></div>'
-        + (b != null ? '<span class="batt' + (b < 20 ? ' low' : '') + '">🔋 ' + Math.round(b) + ' %</span>' : '')
+        + (b != null ? '<span class="batt' + (b < 20 ? ' low' : '') + '">Batterie ' + Math.round(b) + ' %</span>' : '')
         + '<span class="pill ' + (off ? 'warn' : isOpen ? 'open' : 'ok') + '">' + (off ? '?' : isOpen ? 'Offen' : 'Zu') + '</span></div>';
     });
     r.motions.forEach(function (s) {
       var on = s.state === 'on';
-      html += '<div class="contact' + (on ? ' active' : '') + '"><span aria-hidden="true">🚶</span><div class="txt"><b>' + esc(name(s)) + '</b><small>'
+      html += '<div class="contact' + (on ? ' active' : '') + '">' + ic('walk') + '<div class="txt"><b>' + esc(name(s)) + '</b><small>'
         + (unavailable(s) ? 'nicht erreichbar' : on ? 'Bewegung seit ' + timeText(s.last_changed) : 'zuletzt ' + timeText(s.last_changed) + ' · vor ' + ago(s.last_changed)) + '</small></div>'
         + '<span class="pill ' + (on ? 'warn' : 'ok') + '">' + (on ? 'Bewegung' : 'ruhig') + '</span></div>';
     });
     Object.keys(r.buttons).forEach(function (d) {
       var s = r.buttons[d];
-      html += '<div class="noclim">🎛️ ' + esc(devName(d)) + (unavailable(s) ? '' : ' · zuletzt ' + timeText(s.state)) + '</div>';
+      html += '<div class="noclim">' + ic('remote') + esc(devName(d)) + (unavailable(s) ? '' : ' · zuletzt ' + timeText(s.state)) + '</div>';
     });
-    if (r.cams.length) html += '<div class="noclim">📷 ' + esc(r.cams.map(function (x) { return name(x.s); }).join(', ')) + '</div>';
-    if (r.scenes.length) html += '<div class="fsec' + (isFolded('room-scenes') ? ' folded' : '') + '" data-fold-sec="room-scenes"><h3 class="fh">Szenen<span class="chev">▾</span></h3><div class="scenes room">' + r.scenes.map(function (sc) {
+    if (r.cams.length) html += '<div class="noclim">' + ic('camera') + esc(r.cams.map(function (x) { return name(x.s); }).join(', ')) + '</div>';
+    if (r.scenes.length) html += '<div class="fsec' + (isFolded('room-scenes') ? ' folded' : '') + '" data-fold-sec="room-scenes"><h3 class="fh">Szenen<span class="chev">' + ic('chev') + '</span></h3><div class="scenes room">' + r.scenes.map(function (sc) {
       var n = shortName(sc.s, r.name);
-      return '<button class="scene" type="button" data-scene="' + esc(sc.s.entity_id) + '"><i>' + sceneIcon(n) + '</i>' + esc(n) + '</button>';
+      return '<button class="scene" type="button" data-scene="' + esc(sc.s.entity_id) + '">' + sceneIcon(n) + esc(n) + '</button>';
     }).join('') + '</div></div>';
     c.innerHTML = html;
     if (r.lights.length) {
       var fs = document.createElement('div'); fs.className = 'fsec' + (isFolded('room-lights') ? ' folded' : ''); fs.dataset.foldSec = 'room-lights';
-      fs.innerHTML = '<h3 class="fh">Lichter<span class="chev">▾</span></h3>';
+      fs.innerHTML = '<h3 class="fh">Lichter<span class="chev">' + ic('chev') + '</span></h3>';
       var g = document.createElement('div'); g.className = 'room-lights';
       r.lights.forEach(function (l) { g.appendChild(lightBtn(l, true)); });
       fs.appendChild(g); c.appendChild(fs);
@@ -758,12 +986,18 @@
     var el = $('detail'), html = '';
     if (detailKey === 'lichter') {
       var on = m.lights.filter(function (l) { return l.s.state === 'on'; }).length;
-      html = '<section class="box"><div class="box-head"><h2>💡 Lichter in der Wohnung</h2><span class="count">' + on + ' von ' + m.lights.length + ' an</span></div><div class="btnrow" style="margin-top:0"><button class="btn ghost small" type="button" data-allon>Alle an</button><button class="btn ghost small" type="button" data-roomlights="__all">Alle aus</button></div></section>';
+      html = '<section class="box"><div class="box-head"><h2>' + ic('bulb') + 'Licht in der Wohnung</h2><span class="count">' + on + ' von ' + m.lights.length + ' an</span></div><div class="btnrow" style="margin-top:0"><button class="btn ghost small" type="button" data-allon>Alle an</button><button class="btn ghost small" type="button" data-roomlights="__all">Alle aus</button></div></section>';
+      // Lieblingsszenen (früher auf der Startseite), Auswahl und Reihenfolge nur auf diesem Gerät
+      html += '<section class="box"><div class="box-head"><h2>' + ic('sparkle') + 'Szenen</h2><button class="link-btn" type="button" data-favedit>Bearbeiten</button></div><div class="scenes">'
+        + (favScenes().map(function (id) {
+          if (id === '__off') return '<button class="scene off" type="button" data-scene="__off">' + ic('power') + 'Alles aus</button>';
+          return '<button class="scene" type="button" data-scene="' + esc(id) + '">' + sceneIcon(name(S[id])) + esc(name(S[id])) + '</button>';
+        }).join('') || '<div class="empty">Keine Szenen gewählt.</div>') + '</div></section>';
       el.innerHTML = html;
       m.rooms.filter(function (r) { return r.lights.length; }).forEach(function (r) {
         var n = r.lights.filter(function (l) { return l.s.state === 'on'; }).length;
         var box = document.createElement('section'); box.className = 'box';
-        box.innerHTML = '<div class="box-head"><h2>' + r.icon + ' ' + esc(r.name) + '</h2><button class="link-btn" type="button" data-roomlights="' + esc(r.id) + '" data-on="' + (n ? 0 : 1) + '">' + (n ? n + ' an · ausschalten' : 'einschalten') + '</button></div>';
+        box.innerHTML = '<div class="box-head"><h2>' + ic(r.icon) + esc(r.name) + '</h2><button class="link-btn" type="button" data-roomlights="' + esc(r.id) + '" data-on="' + (n ? 0 : 1) + '">' + (n ? n + ' an · ausschalten' : 'einschalten') + '</button></div>';
         var g = document.createElement('div'); g.className = 'room-lights';
         r.lights.forEach(function (l) { g.appendChild(lightBtn(l, true)); });
         box.appendChild(g); el.appendChild(box);
@@ -773,12 +1007,12 @@
     if (detailKey === 'fenster') {
       var cs = m.contacts.slice().sort(function (a, b) { return (b.s.state === 'on') - (a.s.state === 'on'); });
       var open = cs.filter(function (c) { return c.s.state === 'on'; }).length;
-      html = '<section class="box"><div class="box-head"><h2>🪟 Fenster und Türen</h2><span class="count">' + (cs.length ? open + ' offen' : '') + '</span></div><div class="dlist" style="display:grid;gap:8px">'
+      html = '<section class="box"><div class="box-head"><h2>' + ic('window') + 'Fenster und Türen</h2><span class="count">' + (cs.length ? open + ' offen' : '') + '</span></div><div class="dlist" style="display:grid;gap:8px">'
         + (cs.length ? cs.map(function (c) {
           var s = c.s, isOpen = s.state === 'on', off = unavailable(s), b = num(m.batteries[reg(s.entity_id).device]);
-          return '<div class="contact' + (isOpen ? ' open' : '') + '"><span aria-hidden="true">' + (dc(s) === 'window' ? '🪟' : '🚪') + '</span><div class="txt"><b>' + esc(name(s)) + '</b><small>' + esc(c.room ? c.room.name + ' · ' : '')
+          return '<div class="contact' + (isOpen ? ' open' : '') + '">' + ic(isDoor(s) ? 'door' : 'window') + '<div class="txt"><b>' + esc(name(s)) + '</b><small>' + esc(c.room ? c.room.name + ' · ' : '')
             + (off ? 'nicht erreichbar' : (isOpen ? 'offen seit ' + timeText(s.last_changed) + ' · ' + ago(s.last_changed) : 'zu seit ' + timeText(s.last_changed))) + '</small></div>'
-            + (b != null ? '<span class="batt' + (b < 20 ? ' low' : '') + '">🔋 ' + Math.round(b) + ' %</span>' : '')
+            + (b != null ? '<span class="batt' + (b < 20 ? ' low' : '') + '">Batterie ' + Math.round(b) + ' %</span>' : '')
             + '<span class="pill ' + (off ? 'warn' : isOpen ? 'open' : 'ok') + '">' + (off ? '?' : isOpen ? 'Offen' : 'Zu') + '</span></div>';
         }).join('') : '<div class="empty">Noch keine Tür-/Fenstersensoren in Home Assistant. Sobald die Aqara-Kontakte angelernt sind, erscheinen sie hier.</div>')
         + '</div></section>';
@@ -789,12 +1023,12 @@
     var ts = rooms.map(function (r) { return num(r.temp); }).filter(function (v) { return v != null; });
     var hs = rooms.map(function (r) { return num(r.hum); }).filter(function (v) { return v != null; });
     var avg = function (a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; };
-    html = '<section class="box"><div class="box-head"><h2>🌡️ Klima in der Wohnung</h2><span class="count">Ø ' + (ts.length ? fmt1(avg(ts)) + ' °C' : '–') + ' · ' + (hs.length ? Math.round(avg(hs)) + ' %' : '–') + '</span></div>'
+    html = '<section class="box"><div class="box-head"><h2>' + ic('thermo') + 'Klima in der Wohnung</h2><span class="count">Ø ' + (ts.length ? fmt1(avg(ts)) + ' °C' : '–') + ' · ' + (hs.length ? Math.round(avg(hs)) + ' %' : '–') + '</span></div>'
       + rangeChips('flat') + '<div style="margin-top:12px">';
     rooms.forEach(function (r) {
       var t = num(r.temp), h = num(r.hum), isOpen = !!accOpen[r.id];
-      html += '<div class="acc"><button class="acc-h" type="button" data-acc="' + esc(r.id) + '" aria-expanded="' + isOpen + '"><span class="ico" aria-hidden="true">' + r.icon + '</span><span class="txt"><b>' + esc(r.name) + '</b><small>'
-        + (isOpen ? 'Verlauf ' + RANGES[rangeOf('flat')].label : 'Verlauf anzeigen') + '</small></span><span class="vals">' + (t != null ? '<span>' + fmt1(t) + '°</span>' : '') + (h != null ? '<span class="h"' + (h >= 65 ? ' style="color:var(--danger)"' : '') + '>' + Math.round(h) + ' %</span>' : '') + '</span><span class="chev" aria-hidden="true">▾</span></button>';
+      html += '<div class="acc"><button class="acc-h" type="button" data-acc="' + esc(r.id) + '" aria-expanded="' + isOpen + '">' + ic(r.icon) + '<span class="txt"><b>' + esc(r.name) + '</b><small>'
+        + (isOpen ? 'Verlauf ' + RANGES[rangeOf('flat')].label : 'Verlauf anzeigen') + '</small></span><span class="vals">' + (t != null ? '<span>' + fmt1(t) + '°</span>' : '') + (h != null ? '<span class="h' + (tooWet(m, r) ? ' wet' : '') + '">' + Math.round(h) + ' %</span>' : '') + '</span><span class="chev" aria-hidden="true">' + ic('chev') + '</span></button>';
       if (isOpen) {
         var ids = [r.temp && r.temp.entity_id, r.hum && r.hum.entity_id].filter(Boolean), data = loadSeries(ids, rangeOf('flat'));
         html += '<div class="acc-b">';
@@ -988,7 +1222,7 @@
     m.helpers.slice().sort(function (a, b) { return name(a).localeCompare(name(b), 'de'); }).forEach(function (s) { grp(splitName(s).g).helpers.push(s); });
     order.sort(function (a, b) { return (!a) - (!b) || a.localeCompare(b, 'de'); });
     var on = m.autos.filter(function (s) { return s.state === 'on'; }).length;
-    var html = '<section class="box"><div class="box-head"><h2>⚡ Automationen</h2><span class="count">' + on + ' von ' + m.autos.length + ' aktiv</span></div>'
+    var html = '<section class="box"><div class="box-head"><h2>' + ic('auto') + 'Automationen</h2><span class="count">' + on + ' von ' + m.autos.length + ' aktiv</span></div>'
       + '<p class="hint" style="margin:0">Ausgeschaltete Automationen laufen nicht mehr, bis du sie wieder einschaltest. Werte darunter gelten sofort.</p></section>';
     order.forEach(function (g) {
       var G = groups[g];
@@ -1007,7 +1241,7 @@
       G.scripts.forEach(function (s) {
         var run = s.state === 'on', off = unavailable(s), a = s.attributes || {};
         html += '<div class="arow"><div class="txt"><b>' + esc(g ? splitName(s).n : name(s)) + '</b><small>' + (run ? 'läuft gerade' : a.last_triggered ? 'zuletzt ' + esc(timeText(a.last_triggered)) : 'Ablauf auf Knopfdruck') + '</small></div>'
-          + '<button class="btn small" type="button" data-script="' + esc(s.entity_id) + '"' + (off || run ? ' disabled' : '') + '>▶ Ausführen</button></div>';
+          + '<button class="btn small" type="button" data-script="' + esc(s.entity_id) + '"' + (off || run ? ' disabled' : '') + '>Ausführen</button></div>';
       });
       if (G.helpers.length && (G.autos.length || G.scripts.length)) html += '<h3 class="agrp">Einstellungen</h3>';
       G.helpers.forEach(function (s) {
@@ -1064,7 +1298,7 @@
     var target = heatPending[id] != null ? heatPending[id] : a.temperature;
     var heating = a.hvac_action === 'heating';
     var modes = (a.hvac_modes || []).filter(function (x) { return HVAC[x]; });
-    return '<div class="heat' + (heating ? ' on' : '') + '"><span aria-hidden="true">' + (heating ? '🔥' : '🌡️') + '</span><div class="txt"><b>' + esc(roomName ? shortName(s, roomName) : name(s)) + '</b><small>'
+    return '<div class="heat' + (heating ? ' on' : '') + '">' + ic(heating ? 'flame' : 'thermo') + '<div class="txt"><b>' + esc(roomName ? shortName(s, roomName) : name(s)) + '</b><small>'
       + (off ? 'nicht erreichbar' : (roomName ? esc(roomName) + ' · ' : '') + 'ist ' + (a.current_temperature != null ? fmt1(a.current_temperature) + ' °C' : '–') + (heating ? ' · heizt' : s.state === 'off' ? ' · aus' : '')) + '</small></div>'
       + (target != null && s.state !== 'off' ? '<span class="stepper"><button type="button" data-heat="' + esc(id) + '" data-step="-1" aria-label="kälter">−</button><output>' + fmt1(target) + ' °</output><button type="button" data-heat="' + esc(id) + '" data-step="1" aria-label="wärmer">+</button></span>' : '')
       + (modes.length > 1 ? '<div class="modes">' + modes.map(function (md) { return '<button class="chip" type="button" data-hvac="' + esc(id) + '" data-mode="' + md + '" aria-pressed="' + (s.state === md) + '">' + HVAC[md] + '</button>'; }).join('') + '</div>' : '')
@@ -1098,7 +1332,7 @@
     var conf = lsGet(LS_CONN) || {}, base = (conf.url || '').replace(/\/+$/, '');
     $('alarms').innerHTML = m.alarms.map(function (a) {
       var armed = /^armed/.test(a.state), off = unavailable(a);
-      return '<section class="box arm"><span style="font-size:1.6rem" aria-hidden="true">' + (armed ? '🛡️' : '💤') + '</span><div class="txt"><b>' + esc(name(a)) + '</b><small>'
+      return '<section class="box arm">' + ic(armed ? 'shield' : 'moon') + '<div class="txt"><b>' + esc(name(a)) + '</b><small>'
         + (off ? 'nicht erreichbar' : armed ? 'Scharf · Bewegungen werden aufgezeichnet' : 'Unscharf · keine Aufnahmen') + '</small></div>'
         + '<button class="btn' + (armed ? ' ghost' : '') + ' small" type="button" data-arm="' + esc(a.entity_id) + '"' + (off ? ' disabled' : '') + '>' + (armed ? 'Unscharf' : 'Scharf schalten') + '</button></section>';
     }).join('');
@@ -1114,13 +1348,19 @@
       var dev = reg(id).device, motion = null;
       Object.keys(S).forEach(function (oid) { if (reg(oid).device === dev && dev && oid.indexOf('binary_sensor.') === 0 && dc(S[oid]) === 'motion') motion = S[oid]; });
       var n = keep[id] || document.createElement('section');
-      n.className = 'box cam'; n.dataset.cam = id;
+      // Steckdose der Kamera (z. B. Tapo „Steckdose Kamera“ im Flur): gleicher Raum, „Kamera“ im Namen
+      var plug = c.room ? c.room.plugs.filter(function (p) { return /kamera|cam/i.test(name(p) + ' ' + p.entity_id); })[0] : null;
+      var plugOn = plug && plug.state === 'on';
+      n.className = 'box cam' + (plug && plug.state === 'off' ? ' dark' : ''); n.dataset.cam = id;
       var img = n.querySelector('img');
       var meta = '<div class="txt"><b>' + esc(name(s)) + '</b><small>' + esc(c.room ? c.room.name : '') + (off ? ' · nicht erreichbar' : '')
         + (motion && !unavailable(motion) ? ' · Bewegung ' + (motion.state === 'on' ? 'jetzt' : timeText(motion.last_changed)) : '') + '</small></div>'
-        + '<button class="btn ghost small" type="button" data-snap="' + esc(id) + '"' + (off ? ' disabled' : '') + '>📸 Neues Bild</button>';
-      if (!keep[id]) n.innerHTML = '<div class="img">Kein Bild</div><div class="meta"></div>';
+        + '<button class="btn ghost small" type="button" data-snap="' + esc(id) + '"' + (off ? ' disabled' : '') + '>Neues Bild</button>';
+      if (!keep[id]) n.innerHTML = '<div class="img">Kein Bild</div><div class="meta"></div><div class="plugslot"></div>';
       n.querySelector('.meta').innerHTML = meta;
+      n.querySelector('.plugslot').innerHTML = plug ? '<div class="plug">' + ic('plug') + '<div class="txt"><b>' + esc(name(plug)) + '</b><small>'
+        + (unavailable(plug) ? 'nicht erreichbar' : plugOn ? 'an · Kamera hat Strom' : 'aus · Kamera ist stromlos') + (plug.last_changed && !unavailable(plug) ? ' seit ' + esc(timeText(plug.last_changed)) : '') + '</small></div>'
+        + '<button class="tgl" type="button" role="switch" aria-checked="' + plugOn + '" data-plug="' + esc(plug.entity_id) + '" aria-label="' + esc(name(plug)) + (plugOn ? ' ausschalten' : ' einschalten') + '"' + (unavailable(plug) ? ' disabled' : '') + '></button></div>' : '';
       if (src && (!img || img.dataset.src !== src)) {
         var im = img || document.createElement('img');
         im.alt = 'Letztes Bild ' + name(s); im.loading = 'lazy'; im.dataset.src = src; im.src = src;
@@ -1134,11 +1374,17 @@
   document.addEventListener('click', function (e) {
     var snap = e.target.closest('[data-snap]');
     if (snap) {
-      var id = snap.dataset.snap; snap.disabled = true; snap.textContent = '⏳ Moment …';
+      var id = snap.dataset.snap; snap.disabled = true; snap.textContent = 'Moment …';
       callService('blink', 'trigger_camera', {}, { entity_id: id }).then(function () {
         toast('Kamera macht ein neues Bild …');
         setTimeout(function () { camStamp[id] = Date.now(); queueRender(); }, 6000);
       }).catch(function () {}).then(function () { setTimeout(queueRender, 6500); });
+      return;
+    }
+    var pl = e.target.closest('[data-plug]');
+    if (pl) {
+      var isOn = pl.getAttribute('aria-checked') === 'true'; pl.setAttribute('aria-checked', !isOn);
+      callService('switch', isOn ? 'turn_off' : 'turn_on', {}, { entity_id: pl.dataset.plug }).then(function () { toast(isOn ? 'Kamera-Steckdose aus.' : 'Kamera-Steckdose an, die Kamera startet in etwa einer Minute.'); }).catch(function () { queueRender(); });
       return;
     }
     var arm = e.target.closest('[data-arm]');
@@ -1153,6 +1399,20 @@
   // ---------- System ----------
   function bars(n) { var s = '<span class="lqi" aria-label="Funk ' + n + ' von 4">'; for (var i = 1; i <= 4; i++) s += '<i class="' + (i <= n ? 'on' : '') + '" style="height:' + (i * 25) + '%"></i>'; return s + '</span>'; }
   function renderSystem(m) {
+    // Speedtest (Integration „Speedtest.net“): misst die Leitung vom Pi aus, „Jetzt messen“ stößt eine neue Messung an
+    var sp = m.speed, spd = function (x) { var v = num(x); return v == null ? '–' : v < 10 ? fmt1(v) : String(Math.round(v)); };
+    if (sp.down || sp.up || sp.ping) {
+      var when = (sp.down || sp.up || sp.ping).last_updated;
+      $('speedCount').textContent = when ? 'gemessen ' + timeText(when) : '';
+      if (!(document.activeElement && $('speed').contains(document.activeElement))) $('speed').innerHTML = '<div class="speed">'
+        + [['Download', sp.down, 'Mbit/s'], ['Upload', sp.up, 'Mbit/s'], ['Ping', sp.ping, 'ms']].filter(function (x) { return x[1]; }).map(function (x) {
+          return '<div class="meter"><span>' + x[0] + '</span><b>' + spd(x[1]) + '<small>' + x[2] + '</small></b></div>'; }).join('') + '</div>'
+        + '<div class="btnrow"><button class="btn small" type="button" data-speedrun="' + esc((sp.down || sp.up || sp.ping).entity_id) + '"' + (speedRunning ? ' disabled' : '') + '>' + ic('gauge') + (speedRunning ? 'Misst …' : 'Jetzt messen') + '</button></div>'
+        + (current === 'system' ? rangeChips('speed') + chartsFor([sp.down, sp.up].filter(Boolean).map(function (x) { return x.entity_id; }), 'speed', function (id) { return id === (sp.down && sp.down.entity_id) ? { title: 'Download', unit: 'Mbit/s', col: 'var(--p1)', dec: 0 } : { title: 'Upload', unit: 'Mbit/s', col: 'var(--cool)', dec: 0 }; }) : '');
+    } else {
+      $('speedCount').textContent = '';
+      $('speed').innerHTML = '<p class="hint" style="margin:0">Für den Speedtest in Home Assistant die Integration „Speedtest.net“ hinzufügen (Einstellungen → Geräte &amp; Dienste → Integration hinzufügen). Sie misst dann regelmäßig Download, Upload und Ping vom Pi aus.</p>';
+    }
     $('haVersion').textContent = haVersion ? 'HA ' + haVersion : '';
     $('haVersion').className = 'pill ok';
     // Pi-Werte über die Integration „System Monitor“
@@ -1168,7 +1428,7 @@
       return '<div class="meter"><span>' + x[0] + '</span><b>' + (v == null ? '–' : (x[2] === '°C' ? Math.round(v) : Math.round(v)) + ' ' + x[2]) + '</b><div class="bar ' + x[4] + '"><div style="width:' + Math.min(100, (v || 0) / x[3] * 100) + '%"></div></div></div>';
     }).join('');
     var short = { 'CPU-Temperatur': 'Pi ', 'CPU-Last': 'CPU ', 'Arbeitsspeicher': 'RAM ', 'SSD belegt': 'SSD ' };
-    $('piLine').textContent = meters.length ? meters.map(function (x) { var v = num(x[1]); return short[x[0]] + (v == null ? '–' : Math.round(v) + (x[2] === '°C' ? ' °C' : ' %')); }).join(' · ') + ' ›' : 'Raspberry Pi 4 · System-Infos ›';
+    $('piLine').textContent = meters.length ? meters.map(function (x) { var v = num(x[1]); return short[x[0]] + (v == null ? '–' : Math.round(v) + (x[2] === '°C' ? ' °C' : ' %')); }).join(' · ') + ' ›' : 'Raspberry Pi 4 · Einstellungen ›';
     var boot = find(/last_boot|letzter_start|uptime|betriebszeit/);
     if (boot && isNaN(new Date(boot.state))) boot = null;
     $('piHint').textContent = meters.length
@@ -1232,11 +1492,19 @@
     }).sort(function (a, b) { return (a.b == null ? 101 : a.b) - (b.b == null ? 101 : b.b); });
     $('zbCount').textContent = zb.length ? zb.length + ' Geräte' : '';
     $('zigbee').innerHTML = zb.map(function (d) {
-      return '<div class="row"><span class="ico">📡</span><div class="txt"><b>' + esc(d.n) + '</b><small>' + esc(d.d) + (d.off ? ' · nicht erreichbar' : '') + '</small></div>'
+      return '<div class="row"><span class="ico">' + ic('wifi') + '</span><div class="txt"><b>' + esc(d.n) + '</b><small>' + esc(d.d) + (d.off ? ' · nicht erreichbar' : '') + '</small></div>'
         + (d.q != null ? bars(Math.max(1, Math.min(4, Math.ceil(d.q / 64)))) : '')
-        + (d.b != null ? '<span class="batt' + (d.b < 20 ? ' low' : '') + '">🔋 ' + Math.round(d.b) + ' %</span>' : '') + '</div>';
+        + (d.b != null ? '<span class="batt' + (d.b < 20 ? ' low' : '') + '">Batterie ' + Math.round(d.b) + ' %</span>' : '') + '</div>';
     }).join('') || '<div class="empty">Keine Zigbee-Geräte gefunden.</div>';
   }
+
+  var speedRunning = false;
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-speedrun]'); if (!b || speedRunning) return;
+    speedRunning = true; queueRender(); toast('Speedtest läuft, das dauert etwa 30 Sekunden …');
+    callService('homeassistant', 'update_entity', {}, { entity_id: b.dataset.speedrun }).catch(function () {})
+      .then(function () { speedRunning = false; statCache = {}; queueRender(); });
+  });
 
   // ---------- Szenen, Alles aus, Durchsage ----------
   document.addEventListener('click', function (e) {
@@ -1250,7 +1518,6 @@
     if (!ids.length) { toast('Es ist schon alles aus.'); return; }
     callService('light', 'turn_off', {}, { entity_id: ids }).then(function () { toast(ids.length + (ids.length === 1 ? ' Lampe' : ' Lampen') + ' ausgeschaltet.'); }).catch(function () {});
   }
-  $('allOff').addEventListener('click', allOff);
 
   $('sayForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -1267,7 +1534,7 @@
     if (!list) list = ['__off'].concat(lsGet(LS_FAV) || []); // erste Nutzung: bisherige Favoriten übernehmen, „Alles aus“ vorne
     return list.filter(function (id) { return id === '__off' || S[id]; });
   }
-  function sceneLabel(id) { return id === '__off' ? '⏻ Alles aus' : sceneIcon(name(S[id])) + ' ' + name(S[id]); }
+  function sceneLabel(id) { return id === '__off' ? 'Alles aus' : name(S[id]); }
   function orderRows(list, label) {
     return list.map(function (id, i) {
       return '<div class="orow"><span class="n">' + esc(label(id)) + '</span>'
@@ -1289,7 +1556,7 @@
       return '<h3>' + esc(g) + '</h3>' + groups[g].map(function (id) { return '<button type="button" class="addrow" data-add="' + esc(id) + '"><b>＋</b>' + esc(sceneLabel(id)) + '</button>'; }).join('');
     }).join('');
   }
-  $('favBtn').addEventListener('click', function () { renderFavDlg(); $('favDlg').showModal(); });
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-favedit]')) { renderFavDlg(); $('favDlg').showModal(); } });
   $('favDlg').addEventListener('click', function (e) {
     var fav = favScenes(), b;
     if ((b = e.target.closest('[data-mv]'))) move(fav, +b.dataset.i, +b.dataset.mv);
@@ -1302,7 +1569,7 @@
   function renderRoomDlg() {
     var rooms = model().rooms, byId = {};
     rooms.forEach(function (r) { byId[r.id] = r; });
-    $('roomOrder').innerHTML = orderRows(rooms.map(function (r) { return r.id; }), function (id) { return byId[id].icon + ' ' + byId[id].name; });
+    $('roomOrder').innerHTML = orderRows(rooms.map(function (r) { return r.id; }), function (id) { return byId[id].name; });
   }
   document.addEventListener('click', function (e) {
     if (!e.target.closest('[data-roomorder]')) return;
@@ -1388,7 +1655,7 @@
   // ---------- Ansichten ----------
   // Routen: jede Seite hat einen eigenen Eintrag im Verlauf, damit „Zurück“ in der App zur vorigen Seite geht statt sie zu schließen
   var DETAIL = { lichter: 1, fenster: 1, klima: 1 };
-  var views = ['uebersicht', 'raeume', 'kameras', 'sauger', 'automationen', 'system', 'detail'], current = 'uebersicht', lastView = 'uebersicht';
+  var views = ['uebersicht', 'raeume', 'heizung', 'medien', 'energie', 'kameras', 'sauger', 'automationen', 'system', 'detail'], current = 'uebersicht', lastView = 'uebersicht';
   function show(v) {
     if (views.indexOf(v) < 0 && !DETAIL[v]) v = 'uebersicht';
     current = v;
@@ -1397,46 +1664,26 @@
     $('welcome').hidden = !needsConn;
     views.forEach(function (x) { $('view-' + x).hidden = x !== view || needsConn; });
     if (v === 'uebersicht' || v === 'raeume') lastView = v;
-    document.querySelectorAll('.tab[data-view]').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.view === v); });
-    $('menuBtn').setAttribute('aria-selected', v !== 'uebersicht' && v !== 'raeume');
-    document.querySelectorAll('.menu [data-go]').forEach(function (b) { if (b.dataset.go === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-    $('sysBtn').setAttribute('aria-pressed', v === 'system');
+    // Navigation Rail: aktuelle Seite markieren (Fenster gehört zur Übersicht)
+    var railV = v === 'fenster' ? 'uebersicht' : v;
+    document.querySelectorAll('.rail [data-go]').forEach(function (b) { if (b.dataset.go === railV) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     if (DETAIL[v]) detailKey = v;
-    closeMenu();
     if (v !== 'uebersicht') setArrange(false);
     if (connState === 'ok') queueRender();
   }
   function go(v) {
-    if (v === current) { closeMenu(); return; }
+    if (v === current) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     try { history.pushState({ v: v, d: ((history.state && history.state.d) || 0) + 1 }, '', '#' + v); } catch (e) {}
     show(v); window.scrollTo(0, 0);
   }
   window.addEventListener('popstate', function (e) {
-    if (menuOpen()) { closeMenu(); }
     show((e.state && e.state.v) || (location.hash || '').slice(1) || 'uebersicht');
-  });
-  document.querySelector('.tabs').addEventListener('click', function (e) {
-    var t = e.target.closest('.tab[data-view]'); if (!t) return;
-    go(t.dataset.view);
   });
   document.addEventListener('click', function (e) {
     var g = e.target.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
     if (e.target.closest('[data-back]')) { if (history.state && history.state.d) history.back(); else go(lastView); }
   });
-  // System-Infos: dezent über ⚙️ oben und die Pi-Zeile unten
-  $('sysBtn').addEventListener('click', function () { if (current === 'system' && history.state && history.state.d) history.back(); else go(current === 'system' ? 'uebersicht' : 'system'); });
   $('piLine').addEventListener('click', function () { go('system'); });
-
-  // Menü (Burger)
-  function menuOpen() { return !$('menu').hidden; }
-  function closeMenu() { $('menu').hidden = true; $('menuBack').hidden = true; $('menuBtn').setAttribute('aria-expanded', 'false'); }
-  $('menuBtn').addEventListener('click', function () {
-    if (menuOpen()) { closeMenu(); return; }
-    $('menu').hidden = false; $('menuBack').hidden = false; $('menuBtn').setAttribute('aria-expanded', 'true');
-    var cur = $('menu').querySelector('[aria-current]') || $('menu').querySelector('button'); cur.focus();
-  });
-  $('menuBack').addEventListener('click', closeMenu);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && menuOpen()) { closeMenu(); $('menuBtn').focus(); } });
 
   // Bereiche der Übersicht anordnen: lange auf eine Überschrift drücken, dann ziehen oder ↑ ↓
   var board = $('board'), boardLong = false;
