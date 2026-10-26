@@ -434,7 +434,7 @@
     var t0 = Date.parse(au.attributes.last_triggered), lc = Date.parse(s.last_changed);
     if (!(lc >= t0 - 3000 && lc <= t0 + 20000)) return null; // von Hand oder anders eingeschaltet
     var area = areaOf(id), mot = Object.keys(S).filter(function (k) { return k.indexOf('binary_sensor.') === 0 && dc(S[k]) === 'motion' && areaOf(k) === area && reg(k).platform !== 'blink'; }).map(function (k) { return S[k]; })[0];
-    var dauer = (num(S['input_number.nachtlicht_dauer']) || 15) * 60000, max = t0 + 3600000;
+    var dauer = (num(S['input_number.nachtlicht_dauer']) || 2) * 60000, max = t0 + 3600000;
     if (!mot || mot.state === 'on') return { motion: true, until: Math.min(max, Date.now() + dauer), total: dauer };
     return { until: Math.min(max, Date.parse(mot.last_changed) + dauer), total: dauer };
   }
@@ -828,8 +828,9 @@
     e.preventDefault();
     var inp = e.target.querySelector('input'), q = inp.value.trim(), s = speaker(model().echos);
     if (!q || !s) return;
-    // Alexa sucht selbst bei Spotify, wie „Alexa, spiele … auf Spotify“
-    callService('media_player', 'play_media', { media_content_id: q, media_content_type: 'SPOTIFY' }, { entity_id: s.s.entity_id })
+    // Als Sprachbefehl an den Echo, genau wie „Alexa, spiele … auf Spotify“ (der Typ SPOTIFY startet bei Amazon oft nichts mehr)
+    var cmd = /spotify/i.test(q) ? q : 'spiele ' + q + ' auf Spotify';
+    callService('media_player', 'play_media', { media_content_id: cmd, media_content_type: 'custom' }, { entity_id: s.s.entity_id })
       .then(function () { toast('Spotify startet auf ' + (s.room && !isGroup(s.s) ? s.room.name : name(s.s)) + ' …'); inp.value = ''; inp.blur(); }).catch(function () {});
   });
 
