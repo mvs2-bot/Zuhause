@@ -425,6 +425,22 @@
     return { on: on, lvl: lvl, col: col, off: unavailable(s) };
   }
 
+  // Nachtlicht-Countdown: Lampe wurde von der Automation „Nachtlicht“ (id nachtlicht_flur) eingeschaltet und die läuft noch.
+  // Aus geht sie, wenn der Bewegungsmelder im Raum input_number.nachtlicht_dauer Minuten ruhig war, spätestens 1 h nach dem Auslösen.
+  function nightTimer(id) {
+    var s = S[id]; if (!s || s.state !== 'on') return null;
+    var au = Object.keys(S).map(function (k) { return S[k]; }).filter(function (x) { return x.entity_id.indexOf('automation.') === 0 && x.attributes && x.attributes.id === 'nachtlicht_flur'; })[0];
+    if (!au || !au.attributes.last_triggered || au.attributes.current === 0) return null;
+    var t0 = Date.parse(au.attributes.last_triggered), lc = Date.parse(s.last_changed);
+    if (!(lc >= t0 - 3000 && lc <= t0 + 20000)) return null; // von Hand oder anders eingeschaltet
+    var area = areaOf(id), mot = Object.keys(S).filter(function (k) { return k.indexOf('binary_sensor.') === 0 && dc(S[k]) === 'motion' && areaOf(k) === area && reg(k).platform !== 'blink'; }).map(function (k) { return S[k]; })[0];
+    var dauer = (num(S['input_number.nachtlicht_dauer']) || 15) * 60000, max = t0 + 3600000;
+    if (!mot || mot.state === 'on') return { motion: true, until: Math.min(max, Date.now() + dauer), total: dauer };
+    return { until: Math.min(max, Date.parse(mot.last_changed) + dauer), total: dauer };
+  }
+  function mmss(ms) { var t = Math.max(0, Math.round(ms / 1000)); return Math.floor(t / 60) + ':' + ('0' + t % 60).slice(-2); }
+  function timerTxt(nt) { return nt.motion ? 'Bewegung · ' + mmss(nt.total) : 'noch ' + mmss(nt.until - Date.now()); }
+
   function lightBtn(l, small, noRoom) {
     var s = l.s, i = lightInfo(s);
     var b = document.createElement('button');
@@ -436,6 +452,8 @@
     b.innerHTML = '<div class="top"><span class="bulb">' + ic('bulb') + '</span><span class="lvl">' + (i.off ? 'offline' : i.on ? i.lvl + ' %' : 'Aus') + '</span></div>'
       + '<div><div class="name">' + esc((small || noRoom) && l.room ? shortName(s, l.room.name) : name(s)) + '</div>' + (small || noRoom || !l.room ? '' : '<div class="room">' + esc(l.room.name) + '</div>') + '</div>'
       + '<div class="bar"><div style="width:' + i.lvl + '%"></div></div>';
+    var nt = nightTimer(s.entity_id);
+    if (nt) b.insertAdjacentHTML('beforeend', '<div class="ntimer">' + ic('moon') + '<span' + (nt.motion ? '' : ' data-until="' + nt.until + '"') + '>' + timerTxt(nt) + '</span></div>');
     return b;
   }
 
@@ -564,6 +582,13 @@
   var PLAN_IDOOR = ['M288 442V522', 'M356 425H440', 'M660 282V362', 'M668 270H749', 'M312 532H395', 'M594 532H676'];
   var PLAN_LAMP = {}; // z. B. 'light.wohnzimmer_stehlampe': [806, 838]
   var planHtml = '';
+  // Ring um die Lampe läuft ab, darunter die Restzeit (Nachtlicht-Automation)
+  function planTimer(id) {
+    var nt = nightTimer(id); if (!nt) return '';
+    var C = 2 * Math.PI * 24, f = nt.motion ? 1 : Math.max(0, Math.min(1, (nt.until - Date.now()) / nt.total));
+    return '<circle class="nring-bg" r="24"/><circle class="nring" r="24" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - f)).toFixed(1) + '" transform="rotate(-90)"' + (nt.motion ? '' : ' data-ring="' + nt.until + '|' + nt.total + '|' + C.toFixed(1) + '"') + '/>'
+      + '<text class="ntime" y="-34"' + (nt.motion ? '' : ' data-until="' + nt.until + '" data-short') + '>' + (nt.motion ? 'Bewegung' : mmss(nt.until - Date.now())) + '</text>';
+  }
 
   function renderPlan(m) {
     var rooms = '', over = '', lamps = '', lit = 0, openN = 0;
@@ -613,7 +638,7 @@
         var i = lightInfo(l.s); if (i.on) lit++;
         lamps += '<g class="lamp' + (i.on ? ' on' : '') + (i.off ? ' off-line' : '') + '" data-entity="' + esc(l.s.entity_id) + '" role="button" tabindex="0" aria-label="' + esc(name(l.s)) + ': ' + (i.off ? 'nicht erreichbar' : i.on ? 'an ' + i.lvl + ' %' : 'aus') + '"'
           + (i.on ? ' style="--lc:' + esc(l.s.attributes.rgb_color ? i.col : 'var(--lamp)') + '"' : '') + ' transform="translate(' + pos[0] + ' ' + pos[1] + ')">'
-          + '<circle class="glow" r="' + (40 + i.lvl * .5) + '"/><circle class="hit" r="34"/><circle class="bulb" r="15"/><title>' + esc(name(l.s)) + '</title></g>';
+          + '<circle class="glow" r="' + (40 + i.lvl * .5) + '"/><circle class="hit" r="34"/><circle class="bulb" r="15"/>' + planTimer(l.s.entity_id) + '<title>' + esc(name(l.s)) + '</title></g>';
       });
     });
     var outs = PLAN_OUT.map(function (o) { return '<path class="room out" d="' + o.d + '"/>'; }).join('');
@@ -1770,6 +1795,9 @@
     $('clock').textContent = d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })
       + ' · ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     if (connState === 'ok' && d.getSeconds() % 30 === 0) queueRender(); // „seit … min“ aktuell halten
+    // Nachtlicht-Countdown sekundengenau, ohne alles neu zu zeichnen
+    document.querySelectorAll('[data-until]').forEach(function (el) { var r = +el.dataset.until - Date.now(); el.textContent = (el.hasAttribute('data-short') ? '' : 'noch ') + mmss(r); });
+    document.querySelectorAll('[data-ring]').forEach(function (el) { var p = el.dataset.ring.split('|'); el.setAttribute('stroke-dashoffset', (p[2] * (1 - Math.max(0, Math.min(1, (p[0] - Date.now()) / p[1])))).toFixed(1)); });
     setTimeout(tick, 1000 - d.getMilliseconds());
   })();
 
