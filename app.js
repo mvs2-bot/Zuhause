@@ -790,8 +790,13 @@
       var a = e.s.attributes || {}, off = unavailable(e.s);
       return '<div class="row"><span class="ico">' + ic(e.room.icon) + '</span><div class="txt"><b>' + esc(e.room.name) + '</b><small>'
         + esc(off ? 'nicht erreichbar' : e.s.state === 'playing' ? 'spielt ' + (a.media_title || '') : 'bereit') + '</small></div>'
-        + (a.volume_level != null ? '<span class="dval">' + Math.round(a.volume_level * 100) + ' %</span>' : '') + '</div>';
+        + (off ? '' : volStepper(e.s.entity_id, a)) + '</div>';
     }).join('');
+  }
+  // − Wert + ; der Wert steht sofort da, gesendet wird erst nach kurzer Pause (Alexa meldet ihn erst nach ~2 s zurück)
+  function volStepper(id, a) {
+    var v = volPending[id] != null ? volPending[id] : a.volume_level != null ? Math.round(a.volume_level * 100) : null;
+    return '<span class="stepper"><button type="button" data-vol="-5" data-vid="' + esc(id) + '" aria-label="leiser">−</button><output aria-live="polite">' + (v == null ? '–' : v + ' %') + '</output><button type="button" data-vol="5" data-vid="' + esc(id) + '" aria-label="lauter">+</button></span>';
   }
   function isGroup(s) { return /^x\d|gruppe|überall|ueberall|\+/i.test(name(s)) || (s.attributes && s.attributes.member_ids); }
 
@@ -803,6 +808,7 @@
   }
   function renderMusic(m, echos) {
     if (!echos.length && !m.spotify) return;
+    if (m.spotify) return renderSpotify(m);
     var sp = speaker(echos), a = sp ? sp.s.attributes : {}, conf = lsGet(LS_CONN) || {}, base = (conf.url || '').replace(/\/+$/, '');
     var playingNow = echos.filter(function (e) { return e.s.state === 'playing'; });
     $('musicCount').textContent = playingNow.length ? playingNow.length + ' spielt' : '';
@@ -818,9 +824,9 @@
         + '<button class="icon-btn" type="button" data-mp="media_next_track" aria-label="Weiter">' + ic('next') + '</button></div>'
         // Lautstärke ohne Schieberegler (der hat sich beim Scrollen am Handy verstellt): − / + in 5er-Schritten und feste Stufen
         + (function () {
-          var v = volPending[sp.s.entity_id] != null ? volPending[sp.s.entity_id] : a.volume_level != null ? Math.round(a.volume_level * 100) : null;
-          return '<div class="vol"><span class="noclim">Lautstärke</span><span class="stepper"><button type="button" data-vol="-5" aria-label="leiser">−</button><output aria-live="polite">' + (v == null ? '–' : v + ' %') + '</output><button type="button" data-vol="5" aria-label="lauter">+</button></span></div>'
-            + '<div class="chips vchips" role="group" aria-label="Lautstärke-Stufen">' + [10, 20, 30, 40, 60].map(function (x) { return '<button class="chip" type="button" data-volset="' + x + '" aria-pressed="' + (v === x) + '">' + x + ' %</button>'; }).join('') + '</div>';
+          var id = sp.s.entity_id, v = volPending[id] != null ? volPending[id] : a.volume_level != null ? Math.round(a.volume_level * 100) : null;
+          return '<div class="vol"><span class="noclim">Lautstärke</span>' + volStepper(id, a) + '</div>'
+            + '<div class="chips vchips" role="group" aria-label="Lautstärke-Stufen">' + [10, 20, 30, 40, 60].map(function (x) { return '<button class="chip" type="button" data-volset="' + x + '" data-vid="' + esc(id) + '" aria-pressed="' + (v === x) + '">' + x + ' %</button>'; }).join('') + '</div>';
         })()
         + '<form class="say" data-spotify><input type="text" placeholder="Spotify: Playlist, Künstler oder Song" aria-label="Was soll Spotify spielen?"><button class="btn" type="submit" aria-label="Auf Spotify abspielen">' + ic('play') + '</button></form>';
     }
@@ -841,29 +847,48 @@
     var box = $('music'), fa = document.activeElement, focus = fa && box.contains(fa) && /^(INPUT|SELECT)$/.test(fa.tagName);
     if (!focus) box.innerHTML = html; // nicht neu zeichnen, während getippt oder geschoben wird
   }
+  // Musik über die Spotify-Integration: läuft, Gerät, Steuerung, Lautstärke, Playlists
+  function renderSpotify(m) {
+    var sp = m.spotify, a = sp.attributes || {}, on = sp.state === 'playing', base = ((lsGet(LS_CONN) || {}).url || '').replace(/\/+$/, '');
+    $('musicCount').textContent = on && a.source ? 'auf ' + a.source : '';
+    var html = '<div class="np">' + (a.entity_picture ? '<img alt="" src="' + esc((/^https?:/.test(a.entity_picture) ? '' : base) + a.entity_picture) + '">' : '<img alt="" src="icon.svg">')
+      + '<div class="txt"><b>' + esc(a.media_title || (on ? 'Spielt' : 'Nichts läuft')) + '</b><small>' + esc([a.media_artist, a.media_playlist].filter(Boolean).join(' · ') || 'Gerät wählen und Playlist antippen') + '</small></div></div>'
+      + '<div class="mctl">'
+      + ((a.source_list || []).length ? '<select data-spsource aria-label="Spotify-Gerät">' + a.source_list.map(function (x) { return '<option' + (x === (a.source || lsGet(LS_SPDEV)) ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' : '<span class="noclim" style="flex:1">Kein Spotify-Gerät aktiv</span>')
+      + '<button class="icon-btn" type="button" data-mp="media_previous_track" aria-label="Zurück">' + ic('prev') + '</button>'
+      + '<button class="icon-btn" type="button" data-mp="' + (on ? 'media_pause' : 'media_play') + '" aria-label="' + (on ? 'Pause' : 'Abspielen') + '">' + ic(on ? 'pause' : 'play') + '</button>'
+      + '<button class="icon-btn" type="button" data-mp="media_next_track" aria-label="Weiter">' + ic('next') + '</button></div>'
+      + (a.volume_level != null || volPending[sp.entity_id] != null ? '<div class="vol"><span class="noclim">Lautstärke</span>' + volStepper(sp.entity_id, a) + '</div>' : '');
+    loadPlaylists(sp);
+    if (spLists && spLists.length) html += '<div class="noclim plh">Meine Playlists</div><div class="pls" role="list">' + spLists.map(function (x, i) {
+      return '<button class="pl" type="button" role="listitem" data-plist="' + i + '">' + (x.thumbnail ? '<img alt="" loading="lazy" src="' + esc(x.thumbnail) + '">' : '<span class="ph">' + ic('play') + '</span>') + '<span>' + esc(x.title) + '</span></button>';
+    }).join('') + '</div>';
+    else if (spLists) html += '<div class="noclim plh">Keine Playlists in Spotify gefunden.</div>';
+    var box = $('music'), fa = document.activeElement;
+    if (!(fa && box.contains(fa) && fa.tagName === 'SELECT')) box.innerHTML = html;
+  }
   document.addEventListener('change', function (e) {
     if (e.target.matches('[data-speaker]')) { lsSet(LS_SPEAKER, e.target.value); e.target.blur(); queueRender(); }
     if (e.target.matches('[data-spsource]')) { lsSet(LS_SPDEV, e.target.value); var sp = model().spotify; callService('media_player', 'select_source', { source: e.target.value }, { entity_id: sp.entity_id }).catch(function () {}); e.target.blur(); }
   });
   // Lautstärke: Wert sofort anzeigen (Alexa meldet ihn erst nach ~2 s zurück), erst nach kurzer Pause senden
-  var volPending = {}, volTimer = null;
+  var volPending = {}, volTimer = {};
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-vol], [data-volset]'); if (!b) return;
-    var s = speaker(model().echos); if (!s) return;
-    var id = s.s.entity_id, a = s.s.attributes || {};
+    var id = b.dataset.vid, a = (S[id] && S[id].attributes) || {};
     var cur = volPending[id] != null ? volPending[id] : Math.round((a.volume_level || 0) * 100);
     var v = b.dataset.volset ? +b.dataset.volset : Math.max(0, Math.min(100, Math.round((cur + +b.dataset.vol) / 5) * 5));
     volPending[id] = v; queueRender();
-    clearTimeout(volTimer);
-    volTimer = setTimeout(function () {
+    clearTimeout(volTimer[id]);
+    volTimer[id] = setTimeout(function () {
       callService('media_player', 'volume_set', { volume_level: v / 100 }, { entity_id: id }).catch(function () {})
         .then(function () { setTimeout(function () { delete volPending[id]; queueRender(); }, 3000); });
     }, 500);
   });
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-mp]'); if (!b) return;
-    var s = speaker(model().echos); if (!s) return;
-    callService('media_player', b.dataset.mp, {}, { entity_id: s.s.entity_id }).catch(function () {});
+    var m = model(), s = m.spotify || (speaker(m.echos) || {}).s; if (!s) return;
+    callService('media_player', b.dataset.mp, {}, { entity_id: s.entity_id }).catch(function () {});
   });
   // ---------- Spotify-Integration: eigene Playlists über media_player/browse_media ----------
   // Die Wurzel der Spotify-Mediathek enthält „Playlists“ (current_user_playlists); die ID-Form unterscheidet sich je nach HA-Version, daher suchen statt fest verdrahten.

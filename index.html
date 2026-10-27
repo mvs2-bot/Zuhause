@@ -438,6 +438,9 @@
   .stepper { display: inline-flex; align-items: center; gap: 4px; }
   .stepper button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--card); font-weight: 500; font-size: 20px; line-height: 1; color: var(--ink); }
   .stepper button:hover { background: var(--hover); }
+  #echos .stepper { flex: none; gap: 0; }
+  #echos .stepper button { width: 36px; height: 36px; background: var(--well); }
+  #echos .stepper output { min-width: 48px; font-size: 13px; }
   .stepper output { min-width: 58px; text-align: center; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
   .modes { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; }
   .modes .chip { padding: 5px 11px; font-size: 12px; background: var(--card); }
@@ -632,7 +635,7 @@
       </form>
     </section>
     <section class="box" id="echoBox" hidden>
-      <div class="box-head"><h2><span data-ic="speaker"></span>Echos</h2><span class="count" id="echoCount"></span></div>
+      <div class="box-head"><h2><span data-ic="speaker"></span>Echos · Lautstärke</h2><span class="count" id="echoCount"></span></div>
       <div class="list" id="echos"></div>
     </section>
   </section>
@@ -818,7 +821,7 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js?v=21"></script>
+<script src="app.js?v=22"></script>
 <script src="shared/ios-nav.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
