@@ -7,7 +7,7 @@
 
   var DEFAULT_URL = 'https://homeassistant.taildd4a66.ts.net';
   var LS_CONN = 'zuhause-ha', LS_FAV = 'zuhause-fav-scenes', LS_SCENES = 'zuhause-scenes', LS_ROOMS = 'zuhause-room-order',
-    LS_ROOM = 'zuhause-room', LS_NOTES = 'zuhause-notes-open', LS_RANGE = 'zuhause-range-', LS_FOLD = 'zuhause-fold', LS_SPEAKER = 'zuhause-speaker', LS_BOARD = 'zuhause-board';
+    LS_ROOM = 'zuhause-room', LS_NOTES = 'zuhause-notes-open', LS_RANGE = 'zuhause-range-', LS_FOLD = 'zuhause-fold', LS_SPEAKER = 'zuhause-speaker', LS_SPDEV = 'zuhause-spotify-device', LS_BOARD = 'zuhause-board';
 
   // Reihenfolge und Symbole der Räume (HA-Bereichsnamen); unbekannte Bereiche kommen alphabetisch dahinter
   var ROOM_ORDER = ['wohnzimmer', 'küche', 'schlafzimmer', 'büro', 'badezimmer', 'flur', 'toilette', 'keller'];
@@ -788,14 +788,21 @@
         + (function () {
           var v = volPending[sp.s.entity_id] != null ? volPending[sp.s.entity_id] : a.volume_level != null ? Math.round(a.volume_level * 100) : null;
           return '<div class="vol"><span class="noclim">Lautstärke</span><span class="stepper"><button type="button" data-vol="-5" aria-label="leiser">−</button><output aria-live="polite">' + (v == null ? '–' : v + ' %') + '</output><button type="button" data-vol="5" aria-label="lauter">+</button></span></div>'
-            + '<div class="chips wrap" role="group" aria-label="Lautstärke-Stufen">' + [10, 20, 30, 40, 60].map(function (x) { return '<button class="chip" type="button" data-volset="' + x + '" aria-pressed="' + (v === x) + '">' + x + ' %</button>'; }).join('') + '</div>';
+            + '<div class="chips vchips" role="group" aria-label="Lautstärke-Stufen">' + [10, 20, 30, 40, 60].map(function (x) { return '<button class="chip" type="button" data-volset="' + x + '" aria-pressed="' + (v === x) + '">' + x + ' %</button>'; }).join('') + '</div>';
         })()
         + '<form class="say" data-spotify><input type="text" placeholder="Spotify: Playlist, Künstler oder Song" aria-label="Was soll Spotify spielen?"><button class="btn" type="submit" aria-label="Auf Spotify abspielen">' + ic('play') + '</button></form>';
     }
     if (m.spotify && (m.spotify.attributes.source_list || []).length) {
       var sa = m.spotify.attributes;
       html += '<div class="mctl"><span class="noclim" style="white-space:nowrap">Spotify spielt auf</span><select data-spsource aria-label="Spotify-Gerät">'
-        + sa.source_list.map(function (x) { return '<option' + (x === sa.source ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></div>';
+        + sa.source_list.map(function (x) { return '<option' + (x === (sa.source || lsGet(LS_SPDEV)) ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></div>';
+    }
+    if (m.spotify) {
+      loadPlaylists(m.spotify);
+      if (spLists && spLists.length) html += '<div class="noclim plh">Meine Playlists</div><div class="pls" role="list">' + spLists.map(function (x, i) {
+        return '<button class="pl" type="button" role="listitem" data-plist="' + i + '">' + (x.thumbnail ? '<img alt="" loading="lazy" src="' + esc(x.thumbnail) + '">' : '<span class="ph">' + ic('play') + '</span>') + '<span>' + esc(x.title) + '</span></button>';
+      }).join('') + '</div>';
+      else if (spLists && !spLists.length) html += '<div class="noclim plh">Keine Playlists in Spotify gefunden.</div>';
     }
     if (playingNow.length > 1 || (playingNow.length === 1 && sp && playingNow[0] !== sp)) html += '<div class="playing">' + playingNow.map(function (e) {
       return '<div class="noclim">' + ic('play') + esc(e.room && !isGroup(e.s) ? e.room.name : name(e.s)) + ': ' + esc(e.s.attributes.media_title || 'spielt') + '</div>'; }).join('') + '</div>';
@@ -804,7 +811,7 @@
   }
   document.addEventListener('change', function (e) {
     if (e.target.matches('[data-speaker]')) { lsSet(LS_SPEAKER, e.target.value); e.target.blur(); queueRender(); }
-    if (e.target.matches('[data-spsource]')) { var sp = model().spotify; callService('media_player', 'select_source', { source: e.target.value }, { entity_id: sp.entity_id }).catch(function () {}); e.target.blur(); }
+    if (e.target.matches('[data-spsource]')) { lsSet(LS_SPDEV, e.target.value); var sp = model().spotify; callService('media_player', 'select_source', { source: e.target.value }, { entity_id: sp.entity_id }).catch(function () {}); e.target.blur(); }
   });
   // Lautstärke: Wert sofort anzeigen (Alexa meldet ihn erst nach ~2 s zurück), erst nach kurzer Pause senden
   var volPending = {}, volTimer = null;
@@ -825,6 +832,34 @@
     var b = e.target.closest('[data-mp]'); if (!b) return;
     var s = speaker(model().echos); if (!s) return;
     callService('media_player', b.dataset.mp, {}, { entity_id: s.s.entity_id }).catch(function () {});
+  });
+  // ---------- Spotify-Integration: eigene Playlists über media_player/browse_media ----------
+  // Die Wurzel der Spotify-Mediathek enthält „Playlists“ (current_user_playlists); die ID-Form unterscheidet sich je nach HA-Version, daher suchen statt fest verdrahten.
+  var spLists = null, spLoading = false;
+  function browse(id, item) {
+    var msg = { type: 'media_player/browse_media', entity_id: id };
+    if (item) { msg.media_content_id = item.media_content_id; msg.media_content_type = item.media_content_type; }
+    return send(msg);
+  }
+  function loadPlaylists(sp) {
+    if (spLists || spLoading) return;
+    spLoading = true;
+    browse(sp.entity_id).then(function (root) {
+      var kids = root.children || [];
+      var pl = kids.filter(function (c) { return /current_user_playlists$/.test(c.media_content_id || ''); })[0] || kids.filter(function (c) { return /playlist/i.test(c.title || ''); })[0];
+      return pl ? browse(sp.entity_id, pl).then(function (r) { return r.children || []; }) : [];
+    }).then(function (list) { spLists = list.filter(function (c) { return c.can_play; }); queueRender(); })
+      .catch(function () { spLists = []; })
+      .then(function () { spLoading = false; });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-plist]'); if (!b) return;
+    var m = model(), sp = m.spotify, item = spLists && spLists[+b.dataset.plist]; if (!sp || !item) return;
+    var sel = document.querySelector('[data-spsource]'), want = sel && sel.value;
+    // Läuft Spotify gerade nirgends, zuerst das gewählte Gerät (z. B. einen Echo) aktivieren
+    var pre = want && want !== sp.attributes.source ? callService('media_player', 'select_source', { source: want }, { entity_id: sp.entity_id }) : Promise.resolve();
+    pre.then(function () { return callService('media_player', 'play_media', { media_content_id: item.media_content_id, media_content_type: item.media_content_type }, { entity_id: sp.entity_id }); })
+      .then(function () { toast(item.title + ' startet' + (want ? ' auf ' + want : '') + ' …'); }).catch(function () {});
   });
   document.addEventListener('submit', function (e) {
     if (!e.target.matches('[data-spotify]')) return;
