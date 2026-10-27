@@ -518,17 +518,25 @@
     }).join('');
 
     var st = $('status');
+    // Je Raum ein Chip: rot mit Anzahl, wenn dort etwas offen ist, sonst grün „zu“; Tippen öffnet die Fenster-Übersicht
+    function roomChips(m) {
+      return '<span class="rooms-oc">' + m.rooms.filter(function (r) { return r.contacts.length; }).map(function (r) {
+        var o = r.contacts.filter(function (c) { return c.s.state === 'on'; }).length, u = r.contacts.every(function (c) { return unavailable(c.s); });
+        return '<button type="button" class="roc' + (o ? ' open' : u ? ' unk' : '') + '" data-go="fenster">' + esc(r.name) + (o ? ' · ' + (o === r.contacts.length && o > 1 ? 'alle' : o) + ' offen' : '') + '</button>';
+      }).join('') + '</span>';
+    }
     if (open.length) {
       st.className = 'status alert';
       // Bei vielen offenen Fenstern nur die Anzahl und die Räume, sonst wird die Zeile endlos lang
       var many = open.length > 2, rooms = [];
       open.forEach(function (c) { var n = c.room ? c.room.name : name(c.s); if (rooms.indexOf(n) < 0) rooms.push(n); });
       st.innerHTML = '<span class="big">' + ic('window') + '</span><div><b>' + (many ? open.length + ' Fenster und Türen offen' : esc(open.map(function (c) { return name(c.s); }).join(', ')) + ' offen') + '</b><small>'
-        + esc(many ? rooms.join(', ') : open.map(function (c) { return 'seit ' + timeText(c.s.last_changed) + ' · ' + ago(c.s.last_changed) + (c.room && c.room.temp && num(c.room.temp) != null ? ' · ' + fmt1(num(c.room.temp)) + ' °C' : ''); }).join(' · ')) + '</small></div>';
+        + esc(many ? 'zuerst geöffnet ' + timeText(open.map(function (c) { return c.s.last_changed; }).sort()[0]) : open.map(function (c) { return 'seit ' + timeText(c.s.last_changed) + ' · ' + ago(c.s.last_changed) + (c.room && c.room.temp && num(c.room.temp) != null ? ' · ' + fmt1(num(c.room.temp)) + ' °C' : ''); }).join(' · ')) + '</small>'
+        + roomChips(m) + '</div>';
     } else {
       var lastMotion = m.rooms.reduce(function (acc, r) { return acc.concat(r.motions); }, []).sort(function (a, b) { return a.last_changed < b.last_changed ? 1 : -1; })[0];
       st.className = 'status';
-      st.innerHTML = '<span class="big">' + ic(m.contacts.length ? 'lock' : 'home') + '</span><div><b>' + (m.contacts.length ? 'Alles zu' : 'Alles ruhig') + '</b><small>'
+      st.innerHTML = '<span class="big">' + ic(m.contacts.length ? 'lock' : 'home') + '</span><div><b>' + (m.contacts.length ? 'Alle Fenster und Türen zu' : 'Alles ruhig') + '</b><small>'
         + (lastMotion ? esc(name(lastMotion)) + ': ' + (lastMotion.state === 'on' ? 'Bewegung jetzt' : 'zuletzt ' + timeText(lastMotion.last_changed)) : m.contacts.length + ' Fenster und Türen geschlossen') + '</small></div>';
     }
 
@@ -598,10 +606,11 @@
   }
 
   function renderPlan(m) {
-    var rooms = '', over = '', lamps = '', lit = 0, openN = 0;
+    var rooms = '', over = '', lamps = '', halos = '', lit = 0, openN = 0;
     m.rooms.forEach(function (r) {
       var P = PLAN[slug(r.name)]; if (!P) return;
       var anyOn = r.lights.some(function (l) { return l.s.state === 'on'; });
+      var roomOpen = 0, roomAt = rooms.length;
       rooms += '<path class="room' + (anyOn ? ' lit' : '') + '" d="' + P.d + '" data-plan-room="' + esc(r.id) + '"><title>' + esc(r.name) + '</title></path>';
       // Beschriftung: Name, darunter Temperatur und Feuchte (rot über dem Lüften-Grenzwert)
       var t = num(r.temp), h = num(r.hum), wet = tooWet(m, r), x = P.at[0], y = P.at[1];
@@ -615,26 +624,31 @@
       } else if (tv || hv) {
         over += '<text class="rval" x="' + x + '" y="' + (y + 34) + '">' + tv + (tv && hv ? ' · ' : '') + (hv ? '<tspan class="rval' + (wet ? ' hot' : '') + '">' + hv + '</tspan>' : '') + '</text>';
       }
-      // Fenster: links/rechts nach Namen, Rest der Reihe nach
+      // Fenster: links/rechts nach Namen, so wie man im Raum zum Fenster schaut (auf dem Plan also gespiegelt), Rest der Reihe nach
       var wins = (P.win || []).map(function () { return null; }), doors = (P.door || []).map(function () { return null; });
       var cs = r.contacts.slice().sort(function (a, b) { return name(a.s).localeCompare(name(b.s), 'de'); });
       cs.filter(function (c) { return !isDoor(c.s); }).forEach(function (c) {
-        var n = name(c.s).toLowerCase(), i = /links/.test(n) ? 0 : /rechts/.test(n) ? wins.length - 1 : wins.indexOf(null);
+        var n = name(c.s).toLowerCase(), i = /links/.test(n) ? wins.length - 1 : /rechts/.test(n) ? 0 : wins.indexOf(null);
         if (i < 0 || wins[i]) i = wins.indexOf(null);
         if (i > -1) wins[i] = c.s;
       });
       cs.filter(function (c) { return isDoor(c.s); }).forEach(function (c) { var i = doors.indexOf(null); if (i > -1) doors[i] = c.s; });
       (P.win || []).forEach(function (w, i) {
         var s = wins[i], cls = !s ? 'none' : unavailable(s) ? 'unk' : s.state === 'on' ? 'open' : '';
-        if (s && s.state === 'on') openN++;
+        if (s && s.state === 'on') {
+          openN++; roomOpen++;
+          // offenes Fenster: roter Schein, dazu wird der Raum rot getönt – fällt auf einen Blick auf
+          halos += '<line class="win-halo" x1="' + w[0] + '" y1="' + w[1] + '" x2="' + w[2] + '" y2="' + w[3] + '"/>';
+        }
         over += '<line class="win ' + cls + '" x1="' + w[0] + '" y1="' + w[1] + '" x2="' + w[2] + '" y2="' + w[3] + '">' + (s ? '<title>' + esc(name(s)) + ': ' + (cls === 'open' ? 'offen' : cls === 'unk' ? 'nicht erreichbar' : 'zu') + '</title>' : '') + '</line>'
           + '<line class="win-in" x1="' + w[0] + '" y1="' + w[1] + '" x2="' + w[2] + '" y2="' + w[3] + '"/>';
       });
       (P.door || []).forEach(function (d, i) {
         var s = doors[i], isOpen = s && s.state === 'on', cls = !s ? 'none' : unavailable(s) ? 'unk' : isOpen ? 'open' : '';
-        if (isOpen) { openN++; over += '<path class="swing" d="' + d.leaf + '"/><line class="leaf" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.lx + '" y2="' + d.ly + '"/>'; }
+        if (isOpen) { openN++; roomOpen++; halos += '<line class="win-halo" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.x2 + '" y2="' + d.y2 + '"/>'; over += '<path class="swing" d="' + d.leaf + '"/><line class="leaf" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.lx + '" y2="' + d.ly + '"/>'; }
         over += '<line class="win ' + cls + '" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.x2 + '" y2="' + d.y2 + '">' + (s ? '<title>' + esc(name(s)) + ': ' + (isOpen ? 'offen' : 'zu') + '</title>' : '') + '</line>';
       });
+      if (roomOpen) rooms = rooms.slice(0, roomAt) + rooms.slice(roomAt).replace('class="room', 'class="room opened');
       // Lampen
       var spots = P.lamps.slice(), used = {};
       r.lights.slice().sort(function (a, b) { return name(a.s).localeCompare(name(b.s), 'de'); }).forEach(function (l) {
@@ -652,7 +666,7 @@
     var outT = PLAN_OUT.map(function (o) { return '<text class="rname out-name" x="' + o.at[0] + '" y="' + o.at[1] + '">' + esc(o.name) + '</text>'; }).join('');
     var html = '<svg viewBox="26 6 838 994" role="group" aria-label="Grundriss der Wohnung mit Lampen, Fenstern und Türen">'
       + '<defs><radialGradient id="lampGlow"><stop offset="0" style="stop-color:var(--lamp-glow)"/><stop offset="1" style="stop-color:var(--lamp-glow);stop-opacity:0"/></radialGradient></defs>'
-      + outs + rooms + PLAN_IDOOR.map(function (d) { return '<path class="idoor" d="' + d + '"/>'; }).join('') + over + outT + lamps + '</svg>';
+      + outs + rooms + PLAN_IDOOR.map(function (d) { return '<path class="idoor" d="' + d + '"/>'; }).join('') + halos + over + outT + lamps + '</svg>';
     $('planCount').textContent = lit + ' Licht an · ' + openN + ' offen';
     if (html !== planHtml) { planHtml = html; $('plan').innerHTML = html; }
   }
