@@ -364,6 +364,7 @@
   .rail button[aria-current="page"] { color: var(--ink); font-weight: 600; }
   .rail button[aria-current="page"] .ind { background: var(--p1-soft); color: var(--p1); }
   .rail .badge { position: absolute; top: 3px; right: 16px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+  .rail .badge.num { width: auto; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; top: 0; right: 12px; background: var(--p1); color: #fff; font-size: 10px; font-weight: 700; line-height: 17px; text-align: center; }
   @media (max-height: 700px) { .rail button { min-height: 46px; } .rail .ind { height: 26px; } }
   @media (min-width: 980px) { :root { --rail: 88px; } .rail button { font-size: 12px; min-height: 58px; } }
 
@@ -487,6 +488,17 @@
   .vol .stepper button { background: var(--well); }
   .vol + .chips { margin-top: 8px; }
   .vchips { flex-wrap: wrap; }
+  .shoplist { list-style: none; margin: 10px 0 0; padding: 0; }
+  .si { display: flex; align-items: center; gap: 12px; min-height: 48px; border-top: 1px solid var(--line); }
+  .si:first-child { border-top: 0; }
+  .si .st { flex: 1; min-width: 0; font-size: 15px; color: var(--ink); overflow-wrap: anywhere; }
+  .si .st small { display: block; font-size: 12px; color: var(--mute); }
+  .si.done .st { color: var(--mute); text-decoration: line-through; }
+  .chk { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--mute); background: none; display: grid; place-items: center; padding: 0; color: #fff; }
+  .chk[aria-pressed=true] { background: var(--ok); border-color: var(--ok); }
+  .chk svg { width: 16px; height: 16px; }
+  .si .del { color: var(--mute); background: none; }
+  .shopdone { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 16px; }
   .playing { display: grid; gap: 6px; margin-top: 10px; }
   .dval { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .ext { text-decoration: none; }
@@ -633,6 +645,14 @@
     </section>
   </section>
 
+  <section id="view-einkauf" class="view" hidden>
+    <h2 class="page-title">Einkaufsliste</h2>
+    <section class="box">
+      <div class="box-head"><h2><span data-ic="cart"></span>Einkaufen</h2><span class="count" id="shopCount"></span></div>
+      <div id="shop"><div class="empty">Lädt …</div></div>
+    </section>
+  </section>
+
   <!-- Wohnungs-Übersichten hinter den Kacheln (Licht, Klima, Fenster) -->
   <section id="view-detail" class="view" hidden>
     <div id="detail" class="view"></div>
@@ -735,6 +755,7 @@
   <button type="button" data-go="energie"><span class="ind" data-ic="bolt"></span>Energie</button>
   <button type="button" data-go="kameras"><span class="ind" data-ic="camera"></span>Kameras</button>
   <button type="button" data-go="sauger"><span class="ind" data-ic="vacuum"></span>Sauger</button>
+  <button type="button" data-go="einkauf"><span class="ind" data-ic="cart"></span>Einkauf<span class="badge num" id="shopBadge" hidden></span></button>
   <button type="button" data-go="automationen"><span class="ind" data-ic="auto"></span>Abläufe</button>
   <button type="button" data-go="system" id="sysBtn"><span class="ind" data-ic="gear"></span>Einstell.<span class="badge" id="sysBadge" hidden></span></button>
 </nav>
@@ -776,7 +797,7 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js?v=17"></script>
+<script src="app.js?v=18"></script>
 <script src="shared/ios-nav.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });

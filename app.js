@@ -26,6 +26,7 @@
     music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
     bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>',
     camera: '<path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.8l1.5-2h6.4l1.5 2h1.8A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.5"/>',
+    cart: '<path d="M3 4h2.5l2.2 10.5a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.2L21 8H6.3"/><circle cx="10" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/>',
     vacuum: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v3"/>',
     auto: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
@@ -57,6 +58,7 @@
     wc: '<path d="M7 3h6v8H7z"/><path d="M5 11h14a6 6 0 0 1-6 6h-1l1 4H8l1-4.2A6 6 0 0 1 5 11z"/>',
     box: '<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/>',
     wifi: '<path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19v.01"/>',
+    x: '<path d="M6 6l12 12M18 6 6 18"/>', plus: '<path d="M12 5v14M5 12h14"/>',
     check: '<path d="m5 12 5 5 9-10"/>'
   };
   function ic(n, cls) { return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || ICONS.sparkle) + '</svg>'; }
@@ -338,7 +340,7 @@
       var a = areas[id];
       roomMap[id] = { id: id, name: a.name, icon: ROOM_ICON[a.name.toLowerCase()] || 'door', lights: [], temps: [], hums: [], contacts: [], motions: [], cams: [], scenes: [], echos: [], climates: [], plugs: [], buttons: {} };
     });
-    var m = { persons: [], power: [], energy: [], speed: {}, humLimit: {}, rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], heatTpl: [], vacuums: [], spotify: null, weather: null, fritz: [], automations: 0, autos: [], scripts: [], helpers: [], batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
+    var m = { persons: [], power: [], energy: [], speed: {}, humLimit: {}, rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], heatTpl: [], vacuums: [], todos: [], spotify: null, weather: null, fritz: [], automations: 0, autos: [], scripts: [], helpers: [], batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
 
     Object.keys(S).forEach(function (id) {
       var s = S[id], dom = id.split('.')[0], e = reg(id), r = roomMap[areaOf(id)] || null;
@@ -359,6 +361,7 @@
       if (dom === 'sensor' && /_lqi$/.test(id) && e.device) m.lqi[e.device] = s;
       if (dom === 'update' && s.state === 'on' && visible(id)) m.updates.push(s);
       if (e.platform === 'backup' && dc(s) === 'timestamp' && /automatic|automatisch/.test(id)) m.backup = s;
+      if (dom === 'todo' && visible(id)) m.todos.push({ s: s, platform: e.platform });
       if (!primary(id)) return;
       if (dom === 'light') {
         if (s.attributes.is_hue_group || (s.attributes.entity_id && s.attributes.entity_id.length)) return; // Hue-Räume/Zonen und Gruppen weglassen
@@ -564,6 +567,7 @@
     renderMusic(m, echos);
     renderEchos(m);
     renderVacuum(m);
+    renderShop(m);
     if (current === 'energie') renderEnergy(m);
   }
 
@@ -870,6 +874,83 @@
     var cmd = /spotify/i.test(q) ? q : 'spiele ' + q + ' auf Spotify';
     callService('media_player', 'play_media', { media_content_id: cmd, media_content_type: 'custom' }, { entity_id: s.s.entity_id })
       .then(function () { toast('Spotify startet auf ' + (s.room && !isGroup(s.s) ? s.room.name : name(s.s)) + ' …'); inp.value = ''; inp.blur(); }).catch(function () {});
+  });
+
+  // ---------- Einkaufsliste (todo.*; bevorzugt die Alexa-Liste aus der Integration „Alexa Devices“) ----------
+  // Änderungen gehen per todo.add_item / update_item / remove_item an HA, die Integration gleicht sie mit Alexa ab.
+  var LS_SHOP = 'zuhause-shop-list', shop = { id: null, items: null, stamp: null, loading: false };
+  function shopLists(m) {
+    var score = function (t) { return (t.platform === 'alexa_devices' ? 2 : 0) + (/einkauf|shopping/i.test(t.s.entity_id + ' ' + name(t.s)) ? 1 : 0); };
+    return m.todos.slice().sort(function (a, b) { return score(b) - score(a) || name(a.s).localeCompare(name(b.s), 'de'); });
+  }
+  function shopList(m) {
+    var lists = shopLists(m), want = lsGet(LS_SHOP);
+    return lists.filter(function (t) { return t.s.entity_id === want; })[0] || lists[0];
+  }
+  function loadShop(id) {
+    shop.loading = true;
+    return send({ type: 'todo/item/list', entity_id: id }).then(function (r) { if (shop.id === id) shop.items = r.items || []; })
+      .catch(function () { if (shop.id === id) shop.items = shop.items || []; })
+      .then(function () { shop.loading = false; queueRender(); });
+  }
+  function renderShop(m) {
+    var lists = shopLists(m), t = shopList(m), box = $('shop');
+    var open = t ? num(t.s) : null;
+    $('shopBadge').hidden = !open; $('shopBadge').textContent = open || '';
+    if (!t) { box.dataset.key = ''; box.innerHTML = '<div class="empty">Keine Einkaufsliste in Home Assistant gefunden. Richte die Integration „Alexa Devices“ ein, dann erscheint hier die Alexa-Einkaufsliste.</div>'; return; }
+    var id = t.s.entity_id;
+    if (shop.id !== id) { shop.id = id; shop.items = null; shop.stamp = null; }
+    // Neu laden, wenn sich die Liste in HA geändert hat (z. B. „Alexa, setz Milch auf die Einkaufsliste“)
+    if (current === 'einkauf' && !shop.loading && shop.stamp !== t.s.last_updated) { shop.stamp = t.s.last_updated; loadShop(id); }
+    $('shopCount').textContent = open ? open + ' offen' : '';
+    var items = shop.items, todo = (items || []).filter(function (i) { return i.status !== 'completed'; }), done = (items || []).filter(function (i) { return i.status === 'completed'; });
+    var row = function (i) {
+      var c = i.status === 'completed';
+      return '<li class="si' + (c ? ' done' : '') + '"><button type="button" class="chk" data-shopchk="' + esc(i.uid) + '" aria-pressed="' + c + '" aria-label="' + esc(i.summary) + (c ? ' wieder offen' : ' abhaken') + '">' + (c ? ic('check') : '') + '</button>'
+        + '<span class="st">' + esc(i.summary) + (i.description ? '<small>' + esc(i.description) + '</small>' : '') + '</span>'
+        + '<button type="button" class="icon-btn del" data-shopdel="' + esc(i.uid) + '" aria-label="' + esc(i.summary) + ' entfernen">' + ic('x') + '</button></li>';
+    };
+    // Kopf (Listenwahl + Eingabe) nur bei Listenwechsel neu bauen, damit das Eingabefeld beim Tippen den Fokus behält
+    var head = (lists.length > 1 ? '<div class="mctl"><span class="noclim">Liste</span><select data-shoplist aria-label="Liste wählen">' + lists.map(function (x) { return '<option value="' + esc(x.s.entity_id) + '"' + (x === t ? ' selected' : '') + '>' + esc(name(x.s)) + (x.platform === 'alexa_devices' ? ' (Alexa)' : '') + '</option>'; }).join('') + '</select></div>' : '')
+      + '<form class="say" data-shopadd><input type="text" enterkeyhint="done" autocomplete="off" placeholder="Was fehlt?" aria-label="Neuer Eintrag"><button class="btn" type="submit" aria-label="Hinzufügen">' + ic('plus') + '</button></form>'
+      + '<div id="shopItems"></div>';
+    var key = id + '|' + lists.map(function (x) { return x.s.entity_id + name(x.s); }).join(',');
+    if (box.dataset.key !== key || !$('shopItems')) { box.innerHTML = head; box.dataset.key = key; }
+    var html = '';
+    if (!items) html += '<div class="empty">Lädt …</div>';
+    else if (!items.length) html += '<div class="empty">Die Liste ist leer.</div>';
+    else {
+      html += '<ul class="shoplist">' + todo.map(row).join('') + '</ul>';
+      if (done.length) html += '<div class="shopdone"><span class="noclim">Erledigt (' + done.length + ')</span><button type="button" class="btn ghost" data-shopclear>Erledigte löschen</button></div><ul class="shoplist">' + done.map(row).join('') + '</ul>';
+    }
+    $('shopItems').innerHTML = html;
+  }
+  function shopItem(uid) { return (shop.items || []).filter(function (i) { return i.uid === uid; })[0]; }
+  function shopCall(service, data) {
+    return callService('todo', service, data, { entity_id: shop.id }).then(function () { return loadShop(shop.id); }).catch(function () { loadShop(shop.id); });
+  }
+  document.addEventListener('submit', function (e) {
+    if (!e.target.matches('[data-shopadd]')) return;
+    e.preventDefault();
+    var inp = e.target.querySelector('input'), q = inp.value.trim(); if (!q || !shop.id) return;
+    inp.value = '';
+    shop.items = (shop.items || []).concat([{ uid: 'neu-' + Date.now(), summary: q, status: 'needs_action' }]); // sofort zeigen
+    queueRender();
+    shopCall('add_item', { item: q });
+    inp.focus(); // für den nächsten Eintrag offen lassen
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-shopchk], [data-shopdel], [data-shopclear]'); if (!b || !shop.id) return;
+    if (b.dataset.shopclear != null) { shop.items = (shop.items || []).filter(function (i) { return i.status !== 'completed'; }); queueRender(); return shopCall('remove_completed_items', {}); }
+    var it = shopItem(b.dataset.shopchk || b.dataset.shopdel); if (!it) return;
+    if (b.dataset.shopdel) { shop.items = shop.items.filter(function (i) { return i !== it; }); queueRender(); return shopCall('remove_item', { item: [it.uid] }); }
+    var st = it.status === 'completed' ? 'needs_action' : 'completed';
+    it.status = st; queueRender();
+    shopCall('update_item', { item: it.uid, status: st });
+  });
+  document.addEventListener('change', function (e) {
+    if (!e.target.matches('[data-shoplist]')) return;
+    lsSet(LS_SHOP, e.target.value); e.target.blur(); queueRender();
   });
 
   // ---------- Saugroboter ----------
@@ -1738,7 +1819,7 @@
   // ---------- Ansichten ----------
   // Routen: jede Seite hat einen eigenen Eintrag im Verlauf, damit „Zurück“ in der App zur vorigen Seite geht statt sie zu schließen
   var DETAIL = { lichter: 1, fenster: 1, klima: 1 };
-  var views = ['uebersicht', 'raeume', 'heizung', 'medien', 'energie', 'kameras', 'sauger', 'automationen', 'system', 'detail'], current = 'uebersicht', lastView = 'uebersicht';
+  var views = ['uebersicht', 'raeume', 'heizung', 'medien', 'energie', 'kameras', 'sauger', 'einkauf', 'automationen', 'system', 'detail'], current = 'uebersicht', lastView = 'uebersicht';
   function show(v) {
     if (views.indexOf(v) < 0 && !DETAIL[v]) v = 'uebersicht';
     current = v;
