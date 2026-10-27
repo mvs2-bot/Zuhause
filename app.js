@@ -1559,7 +1559,9 @@
     var keep = {};
     el.querySelectorAll('.cam').forEach(function (n) { keep[n.dataset.cam] = n; });
     var frag = document.createDocumentFragment();
-    m.cams.forEach(function (c) {
+    // Kamera Flur (an der Steckdose) immer ganz oben
+    var flur = function (c) { return /flur|gang/i.test(name(c.s) + ' ' + c.s.entity_id) ? 0 : 1; };
+    m.cams.slice().sort(function (x, y) { return flur(x) - flur(y); }).forEach(function (c) {
       var s = c.s, a = s.attributes || {}, id = s.entity_id, off = unavailable(s);
       var src = a.entity_picture ? base + a.entity_picture + (a.entity_picture.indexOf('?') < 0 ? '?' : '&') + 't=' + (camStamp[id] || 0) : '';
       var dev = reg(id).device, motion = null;
