@@ -588,7 +588,7 @@
     kuche: { d: 'M288 62H505V425H288Z', at: [396, 150], lamps: [[465, 257], [380, 330]], win: [[345, 62, 445, 62]] },
     badezimmer: { d: 'M505 62H660V370H505Z', at: [582, 150], short: 'Bad', narrow: true, lamps: [[540, 330], [610, 250]], win: [[532, 62, 632, 62]] },
     toilette: { d: 'M660 88H757V270H660Z', at: [708, 140], short: 'WC', narrow: true, lamps: [[708, 235]], win: [[688, 88, 748, 88]] },
-    flur: { d: 'M288 425H505V370H660V270H757V532H288Z', at: [420, 470], lamps: [[525, 500], [615, 500], [708, 330]], door: [{ x1: 757, y1: 523, x2: 757, y2: 445, leaf: 'M757 523 L683 523 A74 74 0 0 1 757 449 Z', lx: 683, ly: 523 }] },
+    flur: { d: 'M288 425H505V370H660V270H757V532H288Z', at: [420, 470], lamps: [[526, 502], [615, 500], [708, 330]], door: [{ x1: 757, y1: 523, x2: 757, y2: 445, leaf: 'M757 523 L683 523 A74 74 0 0 1 757 449 Z', lx: 683, ly: 523 }] },
     buro: { d: 'M42 532H452V880H42Z', at: [250, 600], lamps: [[190, 685], [170, 758], [300, 732], [360, 640]], win: [[162, 880, 253, 880], [253, 880, 345, 880]] },
     wohnzimmer: { d: 'M452 532H845V948H440V880H452Z', at: [648, 745], lamps: [[496, 573], [736, 620], [689, 838], [806, 838], [600, 660]], win: [[542, 948, 634, 948], [634, 948, 724, 948]],
       door: [{ x1: 440, y1: 943, x2: 440, y2: 887, leaf: 'M440 943 L498 943 A56 56 0 0 0 440 887 Z', lx: 498, ly: 943 }] }
@@ -596,6 +596,18 @@
   var PLAN_OUT = [{ d: 'M42 880H440V985H42Z', at: [240, 940], name: 'Balkon' }];
   var PLAN_IDOOR = ['M288 442V522', 'M356 425H440', 'M660 282V362', 'M668 270H749', 'M312 532H395', 'M594 532H676'];
   var PLAN_LAMP = {}; // z. B. 'light.wohnzimmer_stehlampe': [806, 838]
+  // Feste Plätze nach Lampenname (aus Stefans Skizze vom 27.10.); passt, wenn der Name in HA den Text enthält
+  var PLAN_LAMP_NAME = [
+    ['rotlicht', [241, 86]], ['schlafzimmerlampe', [169, 295]], ['leselampe', [86, 494]],
+    ['schreibtischlampe', [191, 687]], ['burolampe', [302, 733]], ['bildschirm', [170, 759]], ['background', [170, 759]],
+    ['wohnzimmertisch', [692, 840]], ['led_wohnzimmer', [810, 840]], ['wohnzimmer_led', [810, 840]],
+    ['sternenlampe', [735, 425]], ['spiegel', [526, 502]]
+  ];
+  function lampPos(s) {
+    if (PLAN_LAMP[s.entity_id]) return PLAN_LAMP[s.entity_id];
+    var n = slug(name(s)), hit = PLAN_LAMP_NAME.filter(function (x) { return n.indexOf(x[0]) > -1; })[0];
+    return hit && hit[1];
+  }
   var planHtml = '';
   // Ring um die Lampe läuft ab, darunter die Restzeit (Nachtlicht-Automation)
   function planTimer(id) {
@@ -650,9 +662,11 @@
       });
       if (roomOpen) rooms = rooms.slice(0, roomAt) + rooms.slice(roomAt).replace('class="room', 'class="room opened');
       // Lampen
-      var spots = P.lamps.slice(), used = {};
-      r.lights.slice().sort(function (a, b) { return name(a.s).localeCompare(name(b.s), 'de'); }).forEach(function (l) {
-        var pos = PLAN_LAMP[l.s.entity_id];
+      // erst die Lampen mit festem Platz, dann die übrigen auf freie Plätze des Raums (nicht direkt neben einen festen)
+      var spots = P.lamps.slice(), used = {}, ls = r.lights.slice().sort(function (a, b) { return name(a.s).localeCompare(name(b.s), 'de'); });
+      ls.forEach(function (l) { var p = lampPos(l.s); if (p) spots.forEach(function (q) { if (Math.abs(q[0] - p[0]) < 40 && Math.abs(q[1] - p[1]) < 40) used[q] = 1; }); });
+      ls.forEach(function (l) {
+        var pos = lampPos(l.s);
         if (!pos) { pos = spots.filter(function (p) { return !used[p]; })[0]; }
         if (!pos) return;
         used[pos] = 1;
