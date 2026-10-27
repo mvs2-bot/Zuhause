@@ -21,20 +21,22 @@
   :root {
     --bg: #f2f2f7; --card: #fff; --well: #f2f2f7; --hover: #e9e9ef; --line: #e2e2e7; --sep: rgba(60, 60, 67, .14);
     --ink: #1c1c1e; --text: #3a3a3c; --mute: #6c6c70;
-    --p1: #b45309; --p1-soft: #fff3e3; --p1-line: #f6cf98; --on-p1: #fff;
+    --p1: #1e5e3b; --p1-soft: #e4f1e8; --p1-line: #b3d6bf; --on-p1: #fff;
+    --warm: #b45309; --warm-soft: #fff3e3;
     --lamp: #ffc93c; --lamp-glow: rgba(255, 196, 60, .55);
     --ok: #248a3d; --ok-soft: #e4f5e9; --warn: #9a5b00; --warn-soft: #fff2d6; --danger: #d70015; --danger-soft: #ffe6e8;
     --cool: #0062c4; --cool-soft: #e6f0fd;
     --plan-room: #fbfaf7; --plan-lit: #fff6dc; --plan-wall: #3a3a3c; --plan-out: #ecebe6;
     --radius: 18px; --radius-s: 12px; --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 14px rgba(0, 0, 0, .04);
-    --rail: 76px;
+    --rail: 64px;
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
     color-scheme: dark; --bg: #000; --card: #1c1c1e; --well: #2c2c2e; --hover: #3a3a3c; --line: #38383a; --sep: rgba(84, 84, 88, .55);
     --ink: #f5f5f7; --text: #d1d1d6; --mute: #98989f;
-    --p1: #ff9f0a; --p1-soft: #33240b; --p1-line: #6b4a12; --on-p1: #1c1205;
+    --p1: #5cc185; --p1-soft: #12291b; --p1-line: #285c3d; --on-p1: #05140b;
+    --warm: #ff9f0a; --warm-soft: #33240b;
     --lamp: #ffd60a; --lamp-glow: rgba(255, 214, 10, .35);
     --ok: #30d158; --ok-soft: #0f2a17; --warn: #ffd60a; --warn-soft: #302805; --danger: #ff6961; --danger-soft: #3a1412;
     --cool: #64d2ff; --cool-soft: #0b2533;
@@ -43,7 +45,8 @@
   :root[data-theme="dark"] {
     color-scheme: dark; --bg: #000; --card: #1c1c1e; --well: #2c2c2e; --hover: #3a3a3c; --line: #38383a; --sep: rgba(84, 84, 88, .55);
     --ink: #f5f5f7; --text: #d1d1d6; --mute: #98989f;
-    --p1: #ff9f0a; --p1-soft: #33240b; --p1-line: #6b4a12; --on-p1: #1c1205;
+    --p1: #5cc185; --p1-soft: #12291b; --p1-line: #285c3d; --on-p1: #05140b;
+    --warm: #ff9f0a; --warm-soft: #33240b;
     --lamp: #ffd60a; --lamp-glow: rgba(255, 214, 10, .35);
     --ok: #30d158; --ok-soft: #0f2a17; --warn: #ffd60a; --warn-soft: #302805; --danger: #ff6961; --danger-soft: #3a1412;
     --cool: #64d2ff; --cool-soft: #0b2533;
@@ -108,13 +111,19 @@
   .status small { color: var(--mute); font-size: 12px; overflow-wrap: anywhere; min-width: 0; }
   .status.alert { background: var(--danger-soft); }
   .status.alert b, .status.alert .big { color: var(--danger); }
+  .rooms-oc { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; margin-top: 6px; }
+  .roc { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 4px 10px 4px 8px; font-size: 12px; font-weight: 600; background: var(--card); color: var(--ink); }
+  .roc::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  .roc.open { background: var(--danger); color: #fff; }
+  .roc.open::before { background: #fff; }
+  .roc.unk::before { background: var(--mute); }
 
   /* Übersichtskästen mit Symbol */
   .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .stat { display: flex; flex-direction: column; gap: 6px; text-align: left; background: var(--card); border: 0; border-radius: var(--radius-s); padding: 10px 12px 11px; box-shadow: var(--shadow); min-width: 0; }
   .stat .si { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; }
   .stat .si .ic { width: 17px; height: 17px; }
-  .stat .si.l { background: var(--p1-soft); color: var(--p1); }
+  .stat .si.l { background: var(--warm-soft); color: var(--warm); }
   .stat .si.c { background: var(--cool-soft); color: var(--cool); }
   .stat .si.w { background: var(--ok-soft); color: var(--ok); }
   .stat b { display: block; font-size: 19px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -146,8 +155,10 @@
   .plan .lamp { cursor: pointer; }
   .plan .lamp:focus-visible { outline: none; }
   .plan .lamp:focus-visible .bulb { stroke: var(--p1); stroke-width: 5; }
-  .plan .win { stroke-width: 11; stroke: var(--ok); stroke-linecap: butt; }
-  .plan .win.open { stroke: var(--danger); }
+  .plan .win { stroke-width: 15; stroke: var(--ok); stroke-linecap: butt; }
+  .plan .win.open { stroke: var(--danger); stroke-width: 17; }
+  .plan .win-halo { stroke: var(--danger); stroke-width: 44; stroke-linecap: round; opacity: .18; }
+  .plan .room.opened { fill: var(--danger-soft); }
   .plan .win.unk { stroke: var(--mute); stroke-dasharray: 6 6; }
   .plan .win.none { stroke: var(--plan-wall); }
   .plan .win-in { stroke: var(--card); stroke-width: 3; }
@@ -196,9 +207,9 @@
   .light .lvl { font-size: 12px; font-weight: 600; color: var(--mute); font-variant-numeric: tabular-nums; }
   .bar { height: 4px; border-radius: 999px; background: var(--line); overflow: hidden; }
   .bar div { height: 100%; width: 0; background: var(--p1); border-radius: 999px; transition: width .25s; }
-  .light.on { background: var(--p1-soft); }
+  .light.on { background: var(--warm-soft); }
   .light.on .bulb { background: var(--lc, var(--lamp)); color: #3a2a00; }
-  .light.on .lvl { color: var(--p1); }
+  .light.on .lvl { color: var(--warm); }
   .light:hover { filter: brightness(.98); }
   .light.off-line { opacity: .5; }
   .light.busy { opacity: .7; }
@@ -220,7 +231,7 @@
   .clim .t small { font-size: 14px; font-weight: 500; color: var(--mute); }
   .clim .h { font-size: 13px; font-weight: 600; color: var(--cool); font-variant-numeric: tabular-nums; }
   .clim .h.wet { color: var(--danger); }
-  .clim.warm .t { color: var(--p1); }
+  .clim.warm .t { color: var(--warm); }
   .clim.cold .t { color: var(--cool); }
   .noclim { font-size: 13px; color: var(--mute); display: flex; align-items: center; gap: 6px; }
   .contact { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-s); background: var(--well); }
@@ -358,15 +369,15 @@
   .rail::-webkit-scrollbar { display: none; }
   .rail button { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0; min-height: 52px; border: 0; background: none;
     font-size: 11px; font-weight: 500; line-height: 1.15; color: var(--mute); position: relative; }
-  .rail .ind { width: 46px; height: 30px; border-radius: 15px; display: grid; place-items: center; transition: background .2s; }
+  .rail .ind { width: 40px; height: 30px; border-radius: 15px; display: grid; place-items: center; transition: background .2s; }
   .rail .ind .ic { width: 21px; height: 21px; }
   .rail button:hover .ind { background: var(--hover); }
   .rail button[aria-current="page"] { color: var(--ink); font-weight: 600; }
   .rail button[aria-current="page"] .ind { background: var(--p1-soft); color: var(--p1); }
-  .rail .badge { position: absolute; top: 3px; right: 16px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
-  .rail .badge.num { width: auto; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; top: 0; right: 12px; background: var(--p1); color: #fff; font-size: 10px; font-weight: 700; line-height: 17px; text-align: center; }
+  .rail .badge { position: absolute; top: 3px; right: 11px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+  .rail .badge.num { width: auto; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; top: 0; right: 6px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; line-height: 17px; text-align: center; }
   @media (max-height: 700px) { .rail button { min-height: 46px; } .rail .ind { height: 26px; } }
-  @media (min-width: 980px) { :root { --rail: 88px; } .rail button { font-size: 12px; min-height: 58px; } }
+  @media (min-width: 980px) { :root { --rail: 72px; } .rail button { font-size: 12px; min-height: 58px; } }
 
   .toast { position: fixed; left: calc(50% - var(--rail) / 2); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40;
     background: var(--ink); color: var(--card); font-weight: 500; font-size: 13px; border-radius: 12px; padding: 10px 14px; max-width: calc(100% - var(--rail) - 32px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
@@ -419,8 +430,8 @@
   .heat-list { display: grid; gap: 8px; }
   .heat { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-s); background: var(--well); flex-wrap: wrap; }
   .heat > .ic { color: var(--mute); }
-  .heat.on { background: var(--p1-soft); }
-  .heat.on > .ic { color: var(--p1); }
+  .heat.on { background: var(--warm-soft); }
+  .heat.on > .ic { color: var(--warm); }
   .heat .txt { flex: 1; min-width: 120px; }
   .heat b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); }
   .heat small { display: block; font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; }
@@ -576,7 +587,7 @@
     <section class="box" data-fold="plan" data-size="l">
       <div class="box-head"><h2><span data-ic="plan"></span>Wohnung</h2><span class="count" id="planCount"></span></div>
       <div class="plan" id="plan"></div>
-      <div class="legend" aria-hidden="true"><span><i class="l"></i>Licht an</span><span><i></i>zu</span><span><i class="o"></i>offen</span><span>Lampe tippen schaltet, Raum tippen öffnet ihn</span></div>
+      <div class="legend" aria-hidden="true"><span><i class="l"></i>Licht an</span><span><i></i>zu</span><span><i class="o"></i>offen (Raum rot)</span><span>Lampe tippen schaltet, Raum tippen öffnet ihn</span></div>
     </section>
 
     <section class="box" id="weatherBox" data-fold="weather" data-size="m" hidden>
@@ -797,7 +808,7 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js?v=18"></script>
+<script src="app.js?v=19"></script>
 <script src="shared/ios-nav.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
