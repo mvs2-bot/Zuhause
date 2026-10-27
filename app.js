@@ -517,8 +517,11 @@
     var st = $('status');
     if (open.length) {
       st.className = 'status alert';
-      st.innerHTML = '<span class="big">' + ic('window') + '</span><div><b>' + esc(open.map(function (c) { return name(c.s); }).join(', ')) + ' offen</b><small>'
-        + esc(open.map(function (c) { return 'seit ' + timeText(c.s.last_changed) + ' · ' + ago(c.s.last_changed) + (c.room && c.room.temp && num(c.room.temp) != null ? ' · ' + fmt1(num(c.room.temp)) + ' °C' : ''); }).join(' · ')) + '</small></div>';
+      // Bei vielen offenen Fenstern nur die Anzahl und die Räume, sonst wird die Zeile endlos lang
+      var many = open.length > 2, rooms = [];
+      open.forEach(function (c) { var n = c.room ? c.room.name : name(c.s); if (rooms.indexOf(n) < 0) rooms.push(n); });
+      st.innerHTML = '<span class="big">' + ic('window') + '</span><div><b>' + (many ? open.length + ' Fenster und Türen offen' : esc(open.map(function (c) { return name(c.s); }).join(', ')) + ' offen') + '</b><small>'
+        + esc(many ? rooms.join(', ') : open.map(function (c) { return 'seit ' + timeText(c.s.last_changed) + ' · ' + ago(c.s.last_changed) + (c.room && c.room.temp && num(c.room.temp) != null ? ' · ' + fmt1(num(c.room.temp)) + ' °C' : ''); }).join(' · ')) + '</small></div>';
     } else {
       var lastMotion = m.rooms.reduce(function (acc, r) { return acc.concat(r.motions); }, []).sort(function (a, b) { return a.last_changed < b.last_changed ? 1 : -1; })[0];
       st.className = 'status';

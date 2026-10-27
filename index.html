@@ -103,9 +103,9 @@
   /* Lage-Banner */
   .status { display: flex; align-items: center; gap: 10px; border-radius: var(--radius-s); padding: 9px 14px; background: var(--card); box-shadow: var(--shadow); min-width: 0; }
   .status .big { color: var(--ok); display: inline-flex; }
-  .status > div { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
-  .status b { color: var(--ink); font-size: 14px; font-weight: 600; white-space: nowrap; }
-  .status small { color: var(--mute); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .status > div { min-width: 0; flex: 1; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 2px; }
+  .status b { color: var(--ink); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+  .status small { color: var(--mute); font-size: 12px; overflow-wrap: anywhere; min-width: 0; }
   .status.alert { background: var(--danger-soft); }
   .status.alert b, .status.alert .big { color: var(--danger); }
 
@@ -768,7 +768,7 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js?v=15"></script>
+<script src="app.js?v=16"></script>
 <script src="shared/ios-nav.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
