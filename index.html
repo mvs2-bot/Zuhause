@@ -693,6 +693,7 @@
         <div class="seg" id="themeSeg" role="group" aria-label="Erscheinungsbild"><button type="button" data-theme-v="auto">Automatisch</button><button type="button" data-theme-v="light">Hell</button><button type="button" data-theme-v="dark">Dunkel</button></div></div>
       <div class="setrow"><div><b>Übersicht anordnen</b><small>Reihenfolge der Kästen auf der Startseite</small></div><button class="btn ghost small" type="button" data-arrange>Anordnen</button></div>
       <div class="setrow"><div><b>Räume sortieren</b><small>Gilt für Räume, Licht und Klima</small></div><button class="btn ghost small" type="button" data-roomorder>Sortieren</button></div>
+      <div class="setrow"><div><b>Navigation sortieren</b><small>Reihenfolge der Symbole in der Leiste rechts</small></div><button class="btn ghost small" type="button" data-railorder>Sortieren</button></div>
     </section>
 
     <section class="box" data-fold="speed" id="speedBox">
@@ -801,6 +802,15 @@
   </form>
 </dialog>
 
+<dialog id="railDlg">
+  <form method="dialog">
+    <h2>Reihenfolge der Navigation</h2>
+    <p class="dsub">Wird nur auf diesem Gerät gespeichert.</p>
+    <div class="order-list" id="railOrder"></div>
+    <div class="acts"><button class="btn ghost" type="button" id="railReset">Zurücksetzen</button><button class="btn" value="close">Fertig</button></div>
+  </form>
+</dialog>
+
 <div class="arrange-bar" id="arrangeBar" hidden>
   <span>Kästen ziehen oder mit ↑ ↓ verschieben</span>
   <button class="btn small" type="button" id="arrangeDone">Fertig</button>
@@ -808,7 +818,7 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js?v=20"></script>
+<script src="app.js?v=21"></script>
 <script src="shared/ios-nav.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });

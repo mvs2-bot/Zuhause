@@ -7,7 +7,7 @@
 
   var DEFAULT_URL = 'https://homeassistant.taildd4a66.ts.net';
   var LS_CONN = 'zuhause-ha', LS_FAV = 'zuhause-fav-scenes', LS_SCENES = 'zuhause-scenes', LS_ROOMS = 'zuhause-room-order',
-    LS_ROOM = 'zuhause-room', LS_NOTES = 'zuhause-notes-open', LS_RANGE = 'zuhause-range-', LS_FOLD = 'zuhause-fold', LS_SPEAKER = 'zuhause-speaker', LS_SPDEV = 'zuhause-spotify-device', LS_BOARD = 'zuhause-board';
+    LS_ROOM = 'zuhause-room', LS_NOTES = 'zuhause-notes-open', LS_RANGE = 'zuhause-range-', LS_FOLD = 'zuhause-fold', LS_SPEAKER = 'zuhause-speaker', LS_SPDEV = 'zuhause-spotify-device', LS_BOARD = 'zuhause-board', LS_RAIL = 'zuhause-rail-order';
 
   // Reihenfolge und Symbole der Räume (HA-Bereichsnamen); unbekannte Bereiche kommen alphabetisch dahinter
   var ROOM_ORDER = ['wohnzimmer', 'küche', 'schlafzimmer', 'büro', 'badezimmer', 'flur', 'toilette', 'keller'];
@@ -1773,6 +1773,25 @@
     lsSet(LS_ROOMS, move(ids, +b.dataset.i, +b.dataset.mv)); _model = null; renderRoomDlg(); queueRender();
   });
   $('roomReset').addEventListener('click', function () { lsSet(LS_ROOMS, null); _model = null; renderRoomDlg(); queueRender(); });
+
+  // Navigation Rail sortieren (nur auf diesem Gerät); neue Bereiche landen hinten
+  var rail = $('rail'), railDefault = Array.prototype.map.call(rail.children, function (b) { return b.dataset.go; });
+  function railIds() { return Array.prototype.map.call(rail.children, function (b) { return b.dataset.go; }); }
+  function applyRail(ids) { ids.forEach(function (k) { var b = rail.querySelector('[data-go="' + k + '"]'); if (b) rail.appendChild(b); }); }
+  function renderRailDlg() {
+    $('railOrder').innerHTML = orderRows(railIds(), function (id) { return rail.querySelector('[data-go="' + id + '"]').childNodes[1].textContent; });
+  }
+  applyRail(lsGet(LS_RAIL) || []);
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-railorder]')) return;
+    renderRailDlg(); $('railDlg').showModal();
+  });
+  $('railOrder').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-mv]'); if (!b) return;
+    var ids = move(railIds(), +b.dataset.i, +b.dataset.mv);
+    applyRail(ids); lsSet(LS_RAIL, ids); renderRailDlg();
+  });
+  $('railReset').addEventListener('click', function () { applyRail(railDefault); lsSet(LS_RAIL, null); renderRailDlg(); });
 
   // ---------- Licht-Dialog ----------
   var dlgEntity = null, sendTimer = null;
