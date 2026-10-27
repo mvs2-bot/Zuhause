@@ -1565,8 +1565,8 @@
       var dev = reg(id).device, motion = null;
       Object.keys(S).forEach(function (oid) { if (reg(oid).device === dev && dev && oid.indexOf('binary_sensor.') === 0 && dc(S[oid]) === 'motion') motion = S[oid]; });
       var n = keep[id] || document.createElement('section');
-      // Steckdose der Kamera (z. B. Tapo „Steckdose Kamera“ im Flur): gleicher Raum, „Kamera“ im Namen
-      var plug = c.room ? c.room.plugs.filter(function (p) { return /kamera|cam/i.test(name(p) + ' ' + p.entity_id); })[0] : null;
+      // Steckdose der Kamera (Tapo „Steckdose Kamera“ im Flur): gleicher Raum, „Kamera“ im Namen; Blinks eigene Schalter (Bewegungserkennung) sind keine Steckdosen
+      var plug = c.room ? c.room.plugs.filter(function (p) { return reg(p.entity_id).platform !== 'blink' && /kamera|cam/i.test(name(p) + ' ' + p.entity_id); })[0] : null;
       var plugOn = plug && plug.state === 'on';
       n.className = 'box cam' + (plug && plug.state === 'off' ? ' dark' : ''); n.dataset.cam = id;
       var img = n.querySelector('img');
