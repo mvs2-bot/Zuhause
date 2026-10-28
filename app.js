@@ -762,6 +762,11 @@
       : '<div class="empty">Keine Thermostate in Home Assistant gefunden.</div>';
     var heating = m.climates.filter(function (c) { return c.s.attributes.hvac_action === 'heating'; }).length;
     $('heatCount').textContent = m.climates.length ? (heating ? heating + ' heizt' : 'keins heizt') : '';
+    // Hinweis, wenn „Heizung: Abwesend sparen“ gerade abgesenkt hat (alle länger als 2 h weg)
+    var aw = S['automation.heizung_abwesend_sparen'], ppl = m.persons.filter(function (p) { return !unavailable(p); });
+    var away = aw && aw.state === 'on' && ppl.length && ppl.every(function (p) { return p.state !== 'home' && Date.now() - new Date(p.last_changed) > 7200000; });
+    $('heatAway').hidden = !away;
+    if (away) $('heatAway').textContent = 'Abwesend seit ' + timeText(ppl[0].last_changed) + ': Heizung auf 17 °C gesenkt. Beim Heimkommen geht das Wohnzimmer wieder auf Komfort.';
     $('heatTplBox').hidden = !m.heatTpl.length;
     $('heatTpl').innerHTML = m.heatTpl.slice().sort(function (a, b) { return name(a).localeCompare(name(b), 'de'); }).map(function (b) {
       return '<button class="scene" type="button" data-press="' + esc(b.entity_id) + '"' + (b.state === 'unavailable' ? ' disabled' : '') + '>' + ic('thermo') + esc(name(b)) + '</button>';
@@ -1419,12 +1424,10 @@
       return { ctl: (a.has_date ? '<input type="date" data-hlp="' + id + '" data-part="date" value="' + esc(date) + '"' + dis + lbl + '>' : '')
         + (a.has_time ? '<input type="time" data-hlp="' + id + '" data-part="time" value="' + esc((time || '').slice(0, 5)) + '"' + dis + lbl + '>' : '') };
     }
-    // input_number: − Wert + und darunter ein Schieberegler
-    var v = num(s), step = a.step || 1, dec = (String(step).split('.')[1] || '').length, unit = a.unit_of_measurement ? ' ' + esc(a.unit_of_measurement) : '';
-    var shown = v == null ? '–' : v.toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + unit;
+    // input_number: − Wert + (Wert antippen zum Eintippen). Kein Schieberegler: der wurde beim Scrollen versehentlich verstellt
+    var v = num(s), step = a.step || 1, unit = a.unit_of_measurement ? ' ' + esc(a.unit_of_measurement) : '';
     return {
-      ctl: '<span class="stepper"><button type="button" data-num="' + id + '" data-d="-1" aria-label="weniger"' + dis + '>−</button><span class="numv" aria-live="polite">' + shown + '</span><button type="button" data-num="' + id + '" data-d="1" aria-label="mehr"' + dis + '>+</button></span>',
-      below: '<input class="range" type="range" data-hlp="' + id + '" min="' + a.min + '" max="' + a.max + '" step="' + step + '" value="' + (v == null ? a.min : v) + '"' + dis + lbl + '>'
+      ctl: '<span class="stepper"><button type="button" data-num="' + id + '" data-d="-1" aria-label="weniger"' + dis + '>−</button><input class="numv" type="number" inputmode="decimal" data-hlp="' + id + '" min="' + a.min + '" max="' + a.max + '" step="' + step + '" value="' + (v == null ? '' : v) + '"' + dis + lbl + '>' + (unit ? '<span class="unit">' + unit + '</span>' : '') + '<button type="button" data-num="' + id + '" data-d="1" aria-label="mehr"' + dis + '>+</button></span>'
     };
   }
   function renderAutos(m) {
@@ -1497,14 +1500,10 @@
       setHelper(n.dataset.num, +v.toFixed(6));
     }
   });
-  document.addEventListener('input', function (e) {
-    var r = e.target.closest('.range[data-hlp]'); if (!r) return;
-    var s = S[r.dataset.hlp], a = s.attributes || {}, dec = (String(a.step || 1).split('.')[1] || '').length;
-    r.parentNode.querySelector('.numv').textContent = (+r.value).toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + (a.unit_of_measurement ? ' ' + a.unit_of_measurement : '');
-  });
   document.addEventListener('change', function (e) {
     var h = e.target.closest('#auto [data-hlp]'); if (!h || h.classList.contains('tgl')) return;
-    var val = h.type === 'range' ? +h.value : h.value;
+    if (h.type === 'number') { var ha = S[h.dataset.hlp].attributes; if (h.value === '' || +h.value < ha.min || +h.value > ha.max) { toast('Erlaubt: ' + ha.min + ' bis ' + ha.max); h.blur(); queueRender(); return; } }
+    var val = h.type === 'number' ? +h.value : h.value;
     Promise.resolve(setHelper(h.dataset.hlp, val, h.dataset.part)).then(function () { h.blur(); toast('Gespeichert'); }).catch(function () { h.blur(); queueRender(); });
   });
 
