@@ -1543,17 +1543,7 @@
   });
 
   // ---------- Kameras (Blink) ----------
-  var camStamp = {}, liveUntil = {};
-  function snapCam(id) {
-    return callService('blink', 'trigger_camera', {}, { entity_id: id }).then(function () {
-      setTimeout(function () { camStamp[id] = Date.now(); queueRender(); }, 6000);
-    });
-  }
-  // shortcut: Blink hat in HA keinen Videostream, „Live“ = alle 10 s ein neues Standbild für 2 min (Blink-Cloud drosselt sonst)
-  function liveTick(id) {
-    if (!liveUntil[id] || Date.now() > liveUntil[id]) { delete liveUntil[id]; queueRender(); return; }
-    snapCam(id).catch(function () {}).then(function () { setTimeout(function () { liveTick(id); }, 10000); });
-  }
+  var camStamp = {};
   function renderCams(m) {
     var conf = lsGet(LS_CONN) || {}, base = (conf.url || '').replace(/\/+$/, '');
     $('alarms').innerHTML = m.alarms.map(function (a) {
@@ -1569,6 +1559,8 @@
     el.querySelectorAll('.cam').forEach(function (n) { keep[n.dataset.cam] = n; });
     var frag = document.createDocumentFragment();
     // Kamera Flur (an der Steckdose) immer ganz oben
+    // Echo Show 8 Küche: zeigt das Live-Bild über den Blink-Skill der Alexa-App
+    var show = m.echos.filter(function (x) { return x.room && /k(ü|ue)che/i.test(x.room.name); })[0];
     var flur = function (c) { return /flur|gang/i.test(name(c.s) + ' ' + c.s.entity_id) ? 0 : 1; };
     m.cams.slice().sort(function (x, y) { return flur(x) - flur(y); }).forEach(function (c) {
       var s = c.s, a = s.attributes || {}, id = s.entity_id, off = unavailable(s);
@@ -1584,7 +1576,7 @@
       var meta = '<div class="txt"><b>' + esc(name(s)) + '</b><small>' + esc(c.room ? c.room.name : '') + (off ? ' · nicht erreichbar' : '')
         + (motion && !unavailable(motion) ? ' · Bewegung ' + (motion.state === 'on' ? 'jetzt' : timeText(motion.last_changed)) : '') + '</small></div>'
         + '<button class="btn ghost small" type="button" data-snap="' + esc(id) + '"' + (off ? ' disabled' : '') + '>Neues Bild</button>'
-        + '<button class="btn' + (liveUntil[id] ? '' : ' ghost') + ' small" type="button" data-live="' + esc(id) + '"' + (off ? ' disabled' : '') + '>' + (liveUntil[id] ? 'Stopp' : 'Live') + '</button>';
+        + (show && c.room && /keller|wohnzimmer/i.test(c.room.name) ? '<button class="btn ghost small" type="button" data-echo="' + esc(show.s.entity_id) + '" data-show="' + esc(devices[dev] ? devices[dev].name : name(s)) + '">Auf Echo Show</button>' : '');
       if (!keep[id]) n.innerHTML = '<div class="img">Kein Bild</div><div class="meta"></div><div class="plugslot"></div>';
       n.querySelector('.meta').innerHTML = meta;
       n.querySelector('.plugslot').innerHTML = plug ? '<div class="plug">' + ic('plug') + '<div class="txt"><b>' + esc(name(plug)) + '</b><small>'
@@ -1604,15 +1596,17 @@
     var snap = e.target.closest('[data-snap]');
     if (snap) {
       var id = snap.dataset.snap; snap.disabled = true; snap.textContent = 'Moment …';
-      snapCam(id).then(function () { toast('Kamera macht ein neues Bild …'); }).catch(function () {}).then(function () { setTimeout(queueRender, 6500); });
+      callService('blink', 'trigger_camera', {}, { entity_id: id }).then(function () {
+        toast('Kamera macht ein neues Bild …');
+        setTimeout(function () { camStamp[id] = Date.now(); queueRender(); }, 6000);
+      }).catch(function () {}).then(function () { setTimeout(queueRender, 6500); });
       return;
     }
-    var lv = e.target.closest('[data-live]');
-    if (lv) {
-      var lid = lv.dataset.live;
-      if (liveUntil[lid]) delete liveUntil[lid];
-      else { liveUntil[lid] = Date.now() + 120000; liveTick(lid); toast('Live: alle 10 Sekunden ein neues Bild, 2 Minuten lang.'); }
-      queueRender();
+    var sh = e.target.closest('[data-show]');
+    if (sh) {
+      // Blink-Skill kennt die Kameras unter ihrem Blink-App-Namen (= ursprünglicher HA-Gerätename)
+      callService('media_player', 'play_media', { media_content_type: 'custom', media_content_id: 'zeige ' + sh.dataset.show }, { entity_id: sh.dataset.echo })
+        .then(function () { toast('Bild kommt auf den Echo Show in der Küche …'); }).catch(function () {});
       return;
     }
     var pl = e.target.closest('[data-plug]');
