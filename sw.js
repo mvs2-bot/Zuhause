@@ -3,7 +3,7 @@
    - app.js wird mit ?v=N eingebunden, damit index.html und app.js nie aus verschiedenen Versionen stammen
    - Schrift: Systemschrift des Geräts (SF Pro / Roboto), nichts zu laden
    - Home Assistant (WebSocket, Kamerabilder) wird NIE gespeichert, das läuft direkt am Service Worker vorbei */
-const P="zuhause-",V=P+"v25";
+const P="zuhause-",V=P+"v26";
 const CORE=['./','index.html','app.js?v=25','shared/ios-nav.js','manifest.json','icon.svg','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','icons/favicon-32.png'];
 const EXTRA=[];
 const CDN=/fonts\.googleapis\.com|fonts\.gstatic\.com/;

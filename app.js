@@ -1543,7 +1543,17 @@
   });
 
   // ---------- Kameras (Blink) ----------
-  var camStamp = {};
+  var camStamp = {}, liveUntil = {};
+  function snapCam(id) {
+    return callService('blink', 'trigger_camera', {}, { entity_id: id }).then(function () {
+      setTimeout(function () { camStamp[id] = Date.now(); queueRender(); }, 6000);
+    });
+  }
+  // shortcut: Blink hat in HA keinen Videostream, „Live“ = alle 10 s ein neues Standbild für 2 min (Blink-Cloud drosselt sonst)
+  function liveTick(id) {
+    if (!liveUntil[id] || Date.now() > liveUntil[id]) { delete liveUntil[id]; queueRender(); return; }
+    snapCam(id).catch(function () {}).then(function () { setTimeout(function () { liveTick(id); }, 10000); });
+  }
   function renderCams(m) {
     var conf = lsGet(LS_CONN) || {}, base = (conf.url || '').replace(/\/+$/, '');
     $('alarms').innerHTML = m.alarms.map(function (a) {
@@ -1573,7 +1583,8 @@
       var img = n.querySelector('img');
       var meta = '<div class="txt"><b>' + esc(name(s)) + '</b><small>' + esc(c.room ? c.room.name : '') + (off ? ' · nicht erreichbar' : '')
         + (motion && !unavailable(motion) ? ' · Bewegung ' + (motion.state === 'on' ? 'jetzt' : timeText(motion.last_changed)) : '') + '</small></div>'
-        + '<button class="btn ghost small" type="button" data-snap="' + esc(id) + '"' + (off ? ' disabled' : '') + '>Neues Bild</button>';
+        + '<button class="btn ghost small" type="button" data-snap="' + esc(id) + '"' + (off ? ' disabled' : '') + '>Neues Bild</button>'
+        + '<button class="btn' + (liveUntil[id] ? '' : ' ghost') + ' small" type="button" data-live="' + esc(id) + '"' + (off ? ' disabled' : '') + '>' + (liveUntil[id] ? 'Stopp' : 'Live') + '</button>';
       if (!keep[id]) n.innerHTML = '<div class="img">Kein Bild</div><div class="meta"></div><div class="plugslot"></div>';
       n.querySelector('.meta').innerHTML = meta;
       n.querySelector('.plugslot').innerHTML = plug ? '<div class="plug">' + ic('plug') + '<div class="txt"><b>' + esc(name(plug)) + '</b><small>'
@@ -1593,10 +1604,15 @@
     var snap = e.target.closest('[data-snap]');
     if (snap) {
       var id = snap.dataset.snap; snap.disabled = true; snap.textContent = 'Moment …';
-      callService('blink', 'trigger_camera', {}, { entity_id: id }).then(function () {
-        toast('Kamera macht ein neues Bild …');
-        setTimeout(function () { camStamp[id] = Date.now(); queueRender(); }, 6000);
-      }).catch(function () {}).then(function () { setTimeout(queueRender, 6500); });
+      snapCam(id).then(function () { toast('Kamera macht ein neues Bild …'); }).catch(function () {}).then(function () { setTimeout(queueRender, 6500); });
+      return;
+    }
+    var lv = e.target.closest('[data-live]');
+    if (lv) {
+      var lid = lv.dataset.live;
+      if (liveUntil[lid]) delete liveUntil[lid];
+      else { liveUntil[lid] = Date.now() + 120000; liveTick(lid); toast('Live: alle 10 Sekunden ein neues Bild, 2 Minuten lang.'); }
+      queueRender();
       return;
     }
     var pl = e.target.closest('[data-plug]');
