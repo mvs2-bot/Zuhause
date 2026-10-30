@@ -753,7 +753,7 @@
 <template id="connTpl">
   <form class="form conn-form">
     <label>Adresse (Tailscale)
-      <input type="url" name="url" required placeholder="https://homeassistant.taildd4a66.ts.net" autocomplete="url">
+      <input type="url" name="url" required placeholder="https://homeassistant.dein-tailnet.ts.net" autocomplete="url">
     </label>
     <label>Langlebiges Zugriffstoken
       <input type="password" name="token" required placeholder="aus deinem HA-Profil → Sicherheit" autocomplete="off">
@@ -824,7 +824,7 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js?v=25"></script>
+<script src="app.js?v=26"></script>
 <script src="shared/ios-nav.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
