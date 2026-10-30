@@ -25,7 +25,7 @@ Nichts ist fest verdrahtet: Räume, Lampen, Sensoren und Kameras kommen aus den 
 
 ## Verbindung und Sicherheit
 
-- Die App spricht direkt mit der Home-Assistant-WebSocket-API unter `https://homeassistant.taildd4a66.ts.net` (Tailscale serve). Erreichbar nur, wenn auf dem Gerät Tailscale läuft.
+- Die App spricht direkt mit der Home-Assistant-WebSocket-API unter der Tailscale-Adresse des Pi (Tailscale serve, z. B. `https://homeassistant.<tailnet>.ts.net`). Die Adresse gibt man beim ersten Start pro Gerät ein, sie liegt nur im localStorage. Erreichbar nur, wenn auf dem Gerät Tailscale läuft.
 - Login per **langlebigem Zugriffstoken** (HA → Profil → Sicherheit). Das Token wird **nur im localStorage des Geräts** gespeichert, nie im Repo und nie an einen anderen Server geschickt.
 - Keine CORS-Einstellung in HA nötig: WebSocket und Kamerabilder (`entity_picture` mit Kamera-Token) laufen ohne CORS.
 - Token verloren oder Gerät weg: in HA unter Profil → Sicherheit das Token löschen.

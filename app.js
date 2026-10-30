@@ -5,7 +5,6 @@
 (function () {
   'use strict';
 
-  var DEFAULT_URL = 'https://homeassistant.taildd4a66.ts.net';
   var LS_CONN = 'zuhause-ha', LS_FAV = 'zuhause-fav-scenes', LS_SCENES = 'zuhause-scenes', LS_ROOMS = 'zuhause-room-order',
     LS_ROOM = 'zuhause-room', LS_NOTES = 'zuhause-notes-open', LS_RANGE = 'zuhause-range-', LS_FOLD = 'zuhause-fold', LS_SPEAKER = 'zuhause-speaker', LS_SPDEV = 'zuhause-spotify-device', LS_BOARD = 'zuhause-board', LS_RAIL = 'zuhause-rail-order';
 
@@ -1879,7 +1878,7 @@
   document.querySelectorAll('[data-connform]').forEach(function (slot) {
     slot.appendChild($('connTpl').content.cloneNode(true));
     var f = slot.querySelector('form'), conf = lsGet(LS_CONN) || {};
-    f.url.value = conf.url || DEFAULT_URL;
+    f.url.value = conf.url || '';
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       var url = f.url.value.trim().replace(/\/+$/, ''), token = f.token.value.trim();
