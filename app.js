@@ -10,7 +10,7 @@
 
   // Reihenfolge und Symbole der Räume (HA-Bereichsnamen); unbekannte Bereiche kommen alphabetisch dahinter
   var ROOM_ORDER = ['wohnzimmer', 'küche', 'schlafzimmer', 'büro', 'badezimmer', 'flur', 'toilette', 'keller'];
-  var ROOM_ICON = { 'wohnzimmer': 'sofa', 'küche': 'pot', 'schlafzimmer': 'bed', 'büro': 'desk', 'badezimmer': 'bath', 'bad': 'bath', 'flur': 'door', 'toilette': 'wc', 'keller': 'box', 'heimbüro': 'desk', 'essen': 'pot', 'gästezimmer': 'bed' };
+  var ROOM_ICON = { 'wohnzimmer': 'sofa', 'küche': 'pot', 'schlafzimmer': 'bed', 'büro': 'desk', 'badezimmer': 'bath', 'bad': 'bath', 'flur': 'door', 'toilette': 'wc', 'keller': 'box', 'heimbüro': 'desk', 'essen': 'pot', 'heimgym': 'walk', 'ankleide': 'box' };
   // Symbole: eine Linienfamilie (24er-Raster, 1,8er Strich), statt Emojis
   var ICONS = {
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-6h4v6"/>',

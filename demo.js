@@ -20,8 +20,8 @@
       door: [{ x1: 908, y1: 948, x2: 828, y2: 948, leaf: 'M908 948 L908 868 A80 80 0 0 0 828 948 Z', lx: 908, ly: 868 }] },
     toilette: { d: 'M548 820H707V948H548Z', at: [600, 895], short: 'WC', narrow: true, lamps: [[668, 885]], win: [[605, 948, 655, 948]] },
     schlafzimmer: { d: 'M238 879H548V1108H238Z', at: [393, 950], lamps: [[393, 1050], [270, 1060], [516, 1060]], win: [[548, 975, 548, 1068]] },
-    gastezimmer: { d: 'M238 640H548V879H238Z', at: [393, 720], short: 'Gäste', lamps: [[393, 820]] },
-    wohnzimmer: { d: 'M20 640H238V1108H20Z', at: [129, 720], short: 'Wohnen', narrow: true, lamps: [[129, 880], [70, 1050], [190, 1050]], win: [[20, 685, 20, 810], [20, 875, 20, 1000]] }
+    ankleide: { d: 'M238 640H548V879H238Z', at: [393, 720], lamps: [[320, 820], [470, 820]] },
+    heimgym: { d: 'M20 640H238V1108H20Z', at: [129, 720], narrow: true, lamps: [[129, 880], [70, 1050], [190, 1050]], win: [[20, 685, 20, 810], [20, 875, 20, 1000]] }
   };
   Object.keys(plan).forEach(function (k) {
     var P = plan[k];
@@ -30,14 +30,14 @@
   });
   window.ZUHAUSE_DEMO = {
     plan: plan,
-    out: [{ d: sc('M210 519H548V640H210Z'), at: sc([379, 590]), name: 'Treppe' }],
+    out: [],
     idoor: sc(['M778 519H852', 'M962 519H1036', 'M1058 534V608', 'M795 628H870', 'M598 820H673', 'M548 688V762', 'M238 708V788', 'M445 879H525']),
     view: sc('5 150 1265 975')
   };
 
   // ---------- Beispieldaten ----------
   var AREAS = [['flur', 'Flur'], ['bad', 'Bad'], ['heimburo', 'Heimbüro'], ['essen', 'Essen'], ['kuche', 'Küche'], ['toilette', 'Toilette'],
-    ['schlafzimmer', 'Schlafzimmer'], ['wohnzimmer', 'Wohnzimmer'], ['gastezimmer', 'Gästezimmer']];
+    ['schlafzimmer', 'Schlafzimmer'], ['heimgym', 'Heimgym'], ['ankleide', 'Ankleide']];
   var S = {}, REG = [], DEV = [];
   function add(id, state, attrs, area, extra) {
     extra = extra || {};
@@ -56,11 +56,11 @@
   light('kuche_decke', 'Küche Decke', 'kuche', false); light('kuche_unterbau', 'Küche Unterbau-LED', 'kuche', true, 100);
   light('wc_decke', 'Toilette Decke', 'toilette', false);
   light('schlaf_decke', 'Schlafzimmer Decke', 'schlafzimmer', false); light('nachttisch_l', 'Schlafzimmer Nachttisch links', 'schlafzimmer', false); light('nachttisch_r', 'Schlafzimmer Nachttisch rechts', 'schlafzimmer', false);
-  light('gaeste_decke', 'Gästezimmer Decke', 'gastezimmer', false);
-  light('wohn_decke', 'Wohnzimmer Decke', 'wohnzimmer', false); light('stehlampe', 'Wohnzimmer Stehlampe', 'wohnzimmer', true, 45, [255, 154, 60]); light('led', 'Wohnzimmer LED-Streifen', 'wohnzimmer', true, 30, [122, 107, 255]);
+  light('ankleide_decke', 'Ankleide Decke', 'ankleide', false); light('ankleide_spiegel', 'Ankleide Spiegel', 'ankleide', false);
+  light('gym_decke', 'Heimgym Decke', 'heimgym', false); light('gym_spiegel', 'Heimgym Spiegel-LED', 'heimgym', true, 45, [255, 154, 60]); light('led', 'Heimgym LED-Streifen', 'heimgym', true, 30, [122, 107, 255]);
 
   // Klima je Raum (Temperatur, Feuchte); im Heimbüro steht das Fenster offen, im Bad ist es nach dem Duschen feucht
-  var CLIMA = { flur: [20.4, 48], bad: [22.6, 71], heimburo: [18.9, 52], essen: [21.3, 50], kuche: [21.8, 55], schlafzimmer: [18.6, 53], wohnzimmer: [21.7, 47], gastezimmer: [19.2, 49] };
+  var CLIMA = { flur: [20.4, 48], bad: [22.6, 71], heimburo: [18.9, 52], essen: [21.3, 50], kuche: [21.8, 55], schlafzimmer: [18.6, 53], heimgym: [19.7, 47], ankleide: [19.2, 49] };
   Object.keys(CLIMA).forEach(function (a) {
     var n = AREAS.filter(function (x) { return x[0] === a; })[0][1], d = dev('klima_' + a, 'Klima ' + n, a);
     add('sensor.' + a + '_temperatur', CLIMA[a][0], { friendly_name: n + ' Temperatur', device_class: 'temperature', unit_of_measurement: '°C' }, a, { dev: d });
@@ -78,8 +78,8 @@
   contact('terrassentur', 'Küche Terrassentür', 'kuche', 'door', false, 200);
   contact('wc_fenster', 'Toilette Fenster', 'toilette', 'window', false, 900);
   contact('schlaf_fenster', 'Schlafzimmer Fenster', 'schlafzimmer', 'window', false, 480);
-  contact('wohn_fenster_l', 'Wohnzimmer Fenster links', 'wohnzimmer', 'window', false, 700);
-  contact('wohn_fenster_r', 'Wohnzimmer Fenster rechts', 'wohnzimmer', 'window', false, 700);
+  contact('gym_fenster_l', 'Heimgym Fenster links', 'heimgym', 'window', false, 700);
+  contact('gym_fenster_r', 'Heimgym Fenster rechts', 'heimgym', 'window', false, 700);
   add('binary_sensor.flur_bewegung', 'off', { friendly_name: 'Flur Bewegung', device_class: 'motion' }, 'flur', { ago: 12 });
   add('binary_sensor.bad_bewegung', 'off', { friendly_name: 'Bad Bewegung', device_class: 'motion' }, 'bad', { ago: 20 });
 
@@ -89,8 +89,8 @@
     add('climate.' + a + '_heizung', mode, { friendly_name: n + ' Heizung', hvac_modes: ['auto', 'heat', 'off'], temperature: mode === 'off' ? null : target, current_temperature: cur,
       hvac_action: mode === 'off' ? 'off' : cur < target - 0.2 ? 'heating' : 'idle', min_temp: 5, max_temp: 28, target_temp_step: 0.5 }, a);
   }
-  heat('wohnzimmer', 'Wohnzimmer', 22, 'auto'); heat('essen', 'Essen', 21, 'auto'); heat('kuche', 'Küche', 20, 'auto'); heat('bad', 'Bad', 23, 'heat');
-  heat('heimburo', 'Heimbüro', 20.5, 'off'); heat('schlafzimmer', 'Schlafzimmer', 18, 'auto'); heat('gastezimmer', 'Gästezimmer', 17, 'auto');
+  heat('heimgym', 'Heimgym', 19, 'auto'); heat('essen', 'Essen', 21, 'auto'); heat('kuche', 'Küche', 20, 'auto'); heat('bad', 'Bad', 23, 'heat');
+  heat('heimburo', 'Heimbüro', 20.5, 'off'); heat('schlafzimmer', 'Schlafzimmer', 18, 'auto'); heat('ankleide', 'Ankleide', 18, 'auto');
 
   // Bewohner, Wetter, Strom, Musik, Saugroboter, Einkaufsliste, Backup
   add('person.patrick', 'home', { friendly_name: 'Patrick' }, null, { ago: 140 });
@@ -103,7 +103,7 @@
   add('sensor.rechner_leistung', 64, { friendly_name: 'Rechner Leistung', device_class: 'power', unit_of_measurement: 'W' }, 'heimburo', { dev: pc });
   add('sensor.rechner_energie', 96.8, { friendly_name: 'Rechner Energie', device_class: 'energy', unit_of_measurement: 'kWh', state_class: 'total_increasing' }, 'heimburo', { dev: pc });
   add('media_player.echo_kuche', 'playing', { friendly_name: 'Echo Küche', volume_level: 0.3, media_title: 'Morgenshow', media_artist: 'SWR3', source: 'TuneIn' }, 'kuche', { pl: 'alexa_media' });
-  add('media_player.echo_wohnzimmer', 'idle', { friendly_name: 'Echo Wohnzimmer', volume_level: 0.4 }, 'wohnzimmer', { pl: 'alexa_media' });
+  add('media_player.echo_heimgym', 'idle', { friendly_name: 'Echo Heimgym', volume_level: 0.4 }, 'heimgym', { pl: 'alexa_media' });
   var vac = dev('saugroboter', 'Saugroboter');
   add('vacuum.saugroboter', 'docked', { friendly_name: 'Saugroboter', battery_level: 100, fan_speed: 'Standard', fan_speed_list: ['Leise', 'Standard', 'Stark', 'Turbo'] }, null, { dev: vac });
   var SHOP = [{ uid: '1', summary: 'Milch', status: 'needs_action' }, { uid: '2', summary: 'Kaffeebohnen', status: 'needs_action' }, { uid: '3', summary: 'Spülmaschinentabs', status: 'needs_action' }, { uid: '4', summary: 'Brot', status: 'completed' }];
@@ -114,7 +114,7 @@
 
   // Szenen: welche Lampen sie wie setzen
   var SCENES = {
-    fernsehabend: ['Fernsehabend', 'wohnzimmer', { 'light.wohn_decke': 0, 'light.stehlampe': [30, [255, 154, 60]], 'light.led': [25, [122, 107, 255]] }],
+    training: ['Training', 'heimgym', { 'light.gym_decke': [100], 'light.gym_spiegel': [100, [255, 244, 224]], 'light.led': [80, [71, 181, 255]] }],
     abendessen: ['Abendessen', 'essen', { 'light.esstisch': [60, [255, 179, 92]], 'light.essen_wand': [40], 'light.kuche_unterbau': [50] }],
     konzentriert: ['Konzentriert', 'heimburo', { 'light.buro_decke': [100], 'light.schreibtisch': [100] }],
     gute_nacht: ['Gute Nacht', null, { '*': 0, 'light.nachttisch_l': [20, [255, 154, 60]] }]
@@ -124,11 +124,11 @@
   // Automationen mit Beschreibung: zeigen, was die Wohnung von allein erledigt
   var AUTOS = [
     ['heizung_fenster', 'Heizung: Aus bei offenem Fenster', 'Fenster länger als 2 Minuten offen: Heizkörper im Raum aus. Fenster zu: wieder auf die alte Temperatur.', 25],
-    ['heizung_abwesend_sparen', 'Heizung: Abwesend sparen', 'Niemand zu Hause: alle Räume auf 17 °C. Patrick auf dem Heimweg: Wohnzimmer und Bad wieder warm.', 1500],
+    ['heizung_abwesend_sparen', 'Heizung: Abwesend sparen', 'Niemand zu Hause: alle Räume auf 17 °C. Patrick auf dem Heimweg: Bad und Essen wieder warm.', 1500],
     ['heizung_morgens', 'Heizung: Bad morgens vorheizen', 'Werktags 6:15 Uhr Bad auf 23 °C, um 8 Uhr wieder auf 20 °C.', 800],
     ['nachtlicht', 'Licht: Nachtlicht im Flur', 'Nachts Bewegung im Flur: Nachtlicht auf 10 %, aus nach 2 Minuten Ruhe.', 600],
     ['licht_gehen', 'Licht: Alles aus beim Gehen', 'Letzte Person verlässt die Wohnung: alle Lampen und der Rechner aus.', 1500],
-    ['abendlicht', 'Licht: Abendlicht bei Sonnenuntergang', 'Wenn jemand da ist: Stehlampe und Esstisch warmweiß an.', 1100],
+    ['abendlicht', 'Licht: Abendlicht bei Sonnenuntergang', 'Wenn jemand da ist: Esstisch und Küchen-LED warmweiß an.', 1100],
     ['luften', 'Lüften: Hinweis bei hoher Feuchte', 'Luftfeuchte über der Grenze: Hinweis aufs Handy und auf dem Dashboard.', 10],
     ['waschmaschine', 'Haushalt: Waschmaschine fertig', 'Leistung 5 Minuten unter 3 W: Durchsage in der Küche und Nachricht aufs Handy.', 2900],
     ['saugen', 'Haushalt: Saugen wenn niemand da ist', 'Werktags nach 9 Uhr, wenn niemand zu Hause ist: Saugroboter startet.', 1400],
