@@ -165,6 +165,12 @@
   .plan .leaf { fill: none; stroke: var(--danger); stroke-width: 3; }
   .plan .swing { fill: var(--danger); opacity: .12; }
   .plan .motion { fill: var(--p1); }
+  .plan .otime { font: 700 24px var(--font); fill: var(--danger); text-anchor: middle; font-variant-numeric: tabular-nums; pointer-events: none; }
+  .plan .tset { pointer-events: none; }
+  .plan .tset rect { fill: var(--card); stroke: var(--p1); stroke-width: 2.5; }
+  .plan .tset text { font: 600 21px var(--font); fill: var(--p1); text-anchor: middle; font-variant-numeric: tabular-nums; }
+  .plan .tset.heating rect { stroke: var(--warn); fill: var(--warn-soft); }
+  .plan .tset.heating text { fill: var(--warn); }
   .plan .nring-bg { fill: none; stroke: var(--line); stroke-width: 5; }
   .plan .nring { fill: none; stroke: var(--p1); stroke-width: 5; stroke-linecap: round; }
   .plan .ntime { font: 600 22px var(--font); fill: var(--p1); text-anchor: middle; font-variant-numeric: tabular-nums; pointer-events: none; }
@@ -825,7 +831,7 @@
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>if (/[?&]demo\b/.test(location.search)) document.write('<script src="demo.js"><\/script>');</script>
-<script src="app.js?v=27"></script>
+<script src="app.js?v=28"></script>
 <script src="shared/ios-nav.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
