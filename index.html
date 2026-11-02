@@ -824,7 +824,8 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js?v=26"></script>
+<script>if (/[?&]demo\b/.test(location.search)) document.write('<script src="demo.js"><\/script>');</script>
+<script src="app.js?v=27"></script>
 <script src="shared/ios-nav.js" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });

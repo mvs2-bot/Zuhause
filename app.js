@@ -10,7 +10,7 @@
 
   // Reihenfolge und Symbole der Räume (HA-Bereichsnamen); unbekannte Bereiche kommen alphabetisch dahinter
   var ROOM_ORDER = ['wohnzimmer', 'küche', 'schlafzimmer', 'büro', 'badezimmer', 'flur', 'toilette', 'keller'];
-  var ROOM_ICON = { 'wohnzimmer': 'sofa', 'küche': 'pot', 'schlafzimmer': 'bed', 'büro': 'desk', 'badezimmer': 'bath', 'bad': 'bath', 'flur': 'door', 'toilette': 'wc', 'keller': 'box' };
+  var ROOM_ICON = { 'wohnzimmer': 'sofa', 'küche': 'pot', 'schlafzimmer': 'bed', 'büro': 'desk', 'badezimmer': 'bath', 'bad': 'bath', 'flur': 'door', 'toilette': 'wc', 'keller': 'box', 'heimbüro': 'desk', 'essen': 'pot', 'heimgym': 'walk', 'ankleide': 'box' };
   // Symbole: eine Linienfamilie (24er-Raster, 1,8er Strich), statt Emojis
   var ICONS = {
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-6h4v6"/>',
@@ -175,7 +175,7 @@
 
   function connect() {
     clearTimeout(retryTimer);
-    var conf = lsGet(LS_CONN);
+    var conf = window.ZUHAUSE_DEMO ? { url: 'https://demo', token: 'demo' } : lsGet(LS_CONN);
     if (!conf || !conf.url || !conf.token) { setConn('off', 'nicht verbunden'); showWelcome(true); return; }
     if (ws && ws.readyState <= 1) return;
     setConn('wait', 'verbinde …');
@@ -602,6 +602,8 @@
     ['wohnzimmertisch', [692, 840]], ['led_wohnzimmer', [810, 840]], ['wohnzimmer_led', [810, 840]],
     ['sternenlampe', [735, 425]], ['spiegel', [526, 502]]
   ];
+  var PLAN_VIEW = '26 6 838 994', D = window.ZUHAUSE_DEMO;
+  if (D) { PLAN = D.plan; PLAN_OUT = D.out; PLAN_IDOOR = D.idoor; PLAN_LAMP_NAME = []; PLAN_VIEW = D.view; } // Demo-Modus (demo.js): andere Wohnung
   function lampPos(s) {
     if (PLAN_LAMP[s.entity_id]) return PLAN_LAMP[s.entity_id];
     var n = slug(name(s)), hit = PLAN_LAMP_NAME.filter(function (x) { return n.indexOf(x[0]) > -1; })[0];
@@ -677,7 +679,7 @@
     });
     var outs = PLAN_OUT.map(function (o) { return '<path class="room out" d="' + o.d + '"/>'; }).join('');
     var outT = PLAN_OUT.map(function (o) { return '<text class="rname out-name" x="' + o.at[0] + '" y="' + o.at[1] + '">' + esc(o.name) + '</text>'; }).join('');
-    var html = '<svg viewBox="26 6 838 994" role="group" aria-label="Grundriss der Wohnung mit Lampen, Fenstern und Türen">'
+    var html = '<svg viewBox="' + PLAN_VIEW + '" role="group" aria-label="Grundriss der Wohnung mit Lampen, Fenstern und Türen">'
       + '<defs><radialGradient id="lampGlow"><stop offset="0" style="stop-color:var(--lamp-glow)"/><stop offset="1" style="stop-color:var(--lamp-glow);stop-opacity:0"/></radialGradient></defs>'
       + outs + rooms + PLAN_IDOOR.map(function (d) { return '<path class="idoor" d="' + d + '"/>'; }).join('') + halos + over + outT + lamps + '</svg>';
     $('planCount').textContent = lit + ' Licht an · ' + openN + ' offen';

@@ -23,6 +23,10 @@ Der Grundriss ist in `app.js` (`PLAN`) in den Koordinaten des Original-Plans hin
 
 Nichts ist fest verdrahtet: Räume, Lampen, Sensoren und Kameras kommen aus den HA-Registern (Bereiche, Geräte, Entitäten). Neue Geräte erscheinen von selbst im richtigen Raum, sobald sie in HA einem Bereich zugeordnet sind. Versteckte Entitäten (in HA ausgeblendet) und Diagnose-Entitäten werden ignoriert.
 
+## Demo
+
+`index.html?demo` (https://mvs2-bot.github.io/Zuhause/?demo) zeigt die App ohne Home Assistant mit Beispieldaten für die Wohnung im EG Asberg: eigener Grundriss, 9 Räume, Lampen, Fenster, Heizung, Strom, Automationen. Alles ist bedienbar, nichts ist echt. Daten und Grundriss stehen in `demo.js`; `app.js` schaut nur auf `window.ZUHAUSE_DEMO`.
+
 ## Verbindung und Sicherheit
 
 - Die App spricht direkt mit der Home-Assistant-WebSocket-API unter der Tailscale-Adresse des Pi (Tailscale serve, z. B. `https://homeassistant.<tailnet>.ts.net`). Die Adresse gibt man beim ersten Start pro Gerät ein, sie liegt nur im localStorage. Erreichbar nur, wenn auf dem Gerät Tailscale läuft.
@@ -36,6 +40,7 @@ Nichts ist fest verdrahtet: Räume, Lampen, Sensoren und Kameras kommen aus den 
 |---|---|
 | `index.html` | Oberfläche und Styles |
 | `app.js` | Verbindung zu HA, Datenmodell, Rendern |
+| `demo.js` | Demo-Modus: Attrappe der HA-API, Beispieldaten, Grundriss EG Asberg |
 | `sw.js` | Service Worker (App-Dateien offline, HA-Daten nie gecacht) |
 | `manifest.json`, `icon.svg`, `icons/` | PWA |
 | `shared/ios-nav.js` | Zurück/Neu-laden-Leiste für iOS (Kopie aus mvs2-bot.github.io) |
