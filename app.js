@@ -441,6 +441,8 @@
     return { until: Math.min(max, Date.parse(mot.last_changed) + dauer), total: dauer };
   }
   function mmss(ms) { var t = Math.max(0, Math.round(ms / 1000)); return Math.floor(t / 60) + ':' + ('0' + t % 60).slice(-2); }
+  // Stoppuhr: m:ss, ab 1 h h:mm:ss
+  function hmmss(ms) { var t = Math.max(0, Math.round(ms / 1000)), h = Math.floor(t / 3600); return h ? h + ':' + ('0' + Math.floor(t % 3600 / 60)).slice(-2) + ':' + ('0' + t % 60).slice(-2) : mmss(ms); }
   function timerTxt(nt) { return nt.motion ? 'Bewegung · ' + mmss(nt.total) : 'noch ' + mmss(nt.until - Date.now()); }
 
   function lightBtn(l, small, noRoom) {
@@ -585,11 +587,11 @@
   var PLAN = {
     schlafzimmer: { d: 'M42 38H165V20H288V532H42Z', at: [160, 150], lamps: [[240, 84], [168, 293], [86, 494], [200, 420]], win: [[178, 20, 278, 20]] },
     kuche: { d: 'M288 62H505V425H288Z', at: [396, 150], lamps: [[465, 257], [380, 330]], win: [[345, 62, 445, 62]] },
-    badezimmer: { d: 'M505 62H660V370H505Z', at: [582, 150], short: 'Bad', narrow: true, lamps: [[540, 330], [610, 250]], win: [[532, 62, 632, 62]] },
+    badezimmer: { d: 'M505 62H660V370H505Z', at: [582, 150], short: 'Bad', narrow: true, lamps: [[540, 330], [610, 250]], win: [[532, 62, 632, 62]], heat: [582, 100] },
     toilette: { d: 'M660 88H757V270H660Z', at: [708, 140], short: 'WC', narrow: true, lamps: [[708, 235]], win: [[688, 88, 748, 88]] },
     flur: { d: 'M288 425H505V370H660V270H757V532H288Z', at: [420, 470], lamps: [[526, 502], [615, 500], [708, 330]], door: [{ x1: 757, y1: 523, x2: 757, y2: 445, leaf: 'M757 523 L683 523 A74 74 0 0 1 757 449 Z', lx: 683, ly: 523 }] },
     buro: { d: 'M42 532H452V880H42Z', at: [250, 600], lamps: [[190, 685], [170, 758], [300, 732], [360, 640]], win: [[162, 880, 253, 880], [253, 880, 345, 880]] },
-    wohnzimmer: { d: 'M452 532H845V948H440V880H452Z', at: [648, 745], lamps: [[496, 573], [736, 620], [689, 838], [806, 838], [600, 660]], win: [[542, 948, 634, 948], [634, 948, 724, 948]],
+    wohnzimmer: { d: 'M452 532H845V948H440V880H452Z', at: [648, 745], lamps: [[496, 573], [736, 620], [689, 838], [806, 838], [600, 660]], win: [[542, 948, 634, 948], [634, 948, 724, 948]], heat: [700, 912],
       door: [{ x1: 440, y1: 943, x2: 440, y2: 887, leaf: 'M440 943 L498 943 A56 56 0 0 0 440 887 Z', lx: 498, ly: 943 }] }
   };
   var PLAN_OUT = [{ d: 'M42 880H440V985H42Z', at: [240, 940], name: 'Balkon' }];
@@ -618,8 +620,16 @@
       + '<text class="ntime" y="-34"' + (nt.motion ? '' : ' data-until="' + nt.until + '" data-short') + '>' + (nt.motion ? 'Bewegung' : mmss(nt.until - Date.now())) + '</text>';
   }
 
+  // Stoppuhr am offenen Fenster/Tür: waagrecht außen vor der Wand, wenn im Bild Platz ist, sonst innen; senkrecht innen
+  function planOpenFor(s, x1, y1, x2, y2, at) {
+    var x = (x1 + x2) / 2, y = (y1 + y2) / 2, v = PLAN_VIEW.split(' ').map(Number), up = y1 < at[1];
+    if (y1 === y2) { var o = y + (up ? -22 : 40); y = o > v[1] + 26 && o < v[1] + v[3] - 4 ? o : y + (up ? 44 : -26); } else { x += x1 < at[0] ? 52 : -52; y += 8; }
+    var t0 = Date.parse(s.last_changed);
+    return '<text class="otime" x="' + x + '" y="' + y + '" data-since="' + t0 + '">' + hmmss(Date.now() - t0) + '</text>';
+  }
+
   function renderPlan(m) {
-    var rooms = '', over = '', lamps = '', halos = '', lit = 0, openN = 0;
+    var rooms = '', over = '', lamps = '', halos = '', timers = '', lit = 0, openN = 0;
     m.rooms.forEach(function (r) {
       var P = PLAN[slug(r.name)]; if (!P) return;
       var anyOn = r.lights.some(function (l) { return l.s.state === 'on'; });
@@ -652,15 +662,22 @@
           openN++; roomOpen++;
           // offenes Fenster: roter Schein, dazu wird der Raum rot getönt – fällt auf einen Blick auf
           halos += '<line class="win-halo" x1="' + w[0] + '" y1="' + w[1] + '" x2="' + w[2] + '" y2="' + w[3] + '"/>';
+          timers += planOpenFor(s, w[0], w[1], w[2], w[3], P.at);
         }
         over += '<line class="win ' + cls + '" x1="' + w[0] + '" y1="' + w[1] + '" x2="' + w[2] + '" y2="' + w[3] + '">' + (s ? '<title>' + esc(name(s)) + ': ' + (cls === 'open' ? 'offen' : cls === 'unk' ? 'nicht erreichbar' : 'zu') + '</title>' : '') + '</line>'
           + '<line class="win-in" x1="' + w[0] + '" y1="' + w[1] + '" x2="' + w[2] + '" y2="' + w[3] + '"/>';
       });
       (P.door || []).forEach(function (d, i) {
         var s = doors[i], isOpen = s && s.state === 'on', cls = !s ? 'none' : unavailable(s) ? 'unk' : isOpen ? 'open' : '';
-        if (isOpen) { openN++; roomOpen++; halos += '<line class="win-halo" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.x2 + '" y2="' + d.y2 + '"/>'; over += '<path class="swing" d="' + d.leaf + '"/><line class="leaf" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.lx + '" y2="' + d.ly + '"/>'; }
+        if (isOpen) { openN++; roomOpen++; halos += '<line class="win-halo" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.x2 + '" y2="' + d.y2 + '"/>'; over += '<path class="swing" d="' + d.leaf + '"/><line class="leaf" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.lx + '" y2="' + d.ly + '"/>'; timers += planOpenFor(s, d.x1, d.y1, d.x2, d.y2, P.at); }
         over += '<line class="win ' + cls + '" x1="' + d.x1 + '" y1="' + d.y1 + '" x2="' + d.x2 + '" y2="' + d.y2 + '">' + (s ? '<title>' + esc(name(s)) + ': ' + (isOpen ? 'offen' : 'zu') + '</title>' : '') + '</line>';
       });
+      // Solltemperatur des Thermostats (an der Markierung im Plan), orange solange es heizt
+      var cl = P.heat && r.climates[0] && r.climates[0].s;
+      if (cl && !unavailable(cl)) {
+        var sv = cl.state === 'off' ? 'aus' : num(cl.attributes.temperature) != null ? fmt1(num(cl.attributes.temperature)) + '°' : '';
+        if (sv) over += '<g class="tset' + (cl.attributes.hvac_action === 'heating' ? ' heating' : '') + '" transform="translate(' + P.heat[0] + ' ' + P.heat[1] + ')"><rect x="-62" y="-19" width="124" height="34" rx="17"/><text y="7">Soll ' + sv + '</text><title>' + esc(name(cl)) + '</title></g>';
+      }
       if (roomOpen) rooms = rooms.slice(0, roomAt) + rooms.slice(roomAt).replace('class="room', 'class="room opened');
       // Lampen
       // erst die Lampen mit festem Platz, dann die übrigen auf freie Plätze des Raums (nicht direkt neben einen festen)
@@ -681,7 +698,7 @@
     var outT = PLAN_OUT.map(function (o) { return '<text class="rname out-name" x="' + o.at[0] + '" y="' + o.at[1] + '">' + esc(o.name) + '</text>'; }).join('');
     var html = '<svg viewBox="' + PLAN_VIEW + '" role="group" aria-label="Grundriss der Wohnung mit Lampen, Fenstern und Türen">'
       + '<defs><radialGradient id="lampGlow"><stop offset="0" style="stop-color:var(--lamp-glow)"/><stop offset="1" style="stop-color:var(--lamp-glow);stop-opacity:0"/></radialGradient></defs>'
-      + outs + rooms + PLAN_IDOOR.map(function (d) { return '<path class="idoor" d="' + d + '"/>'; }).join('') + halos + over + outT + lamps + '</svg>';
+      + outs + rooms + PLAN_IDOOR.map(function (d) { return '<path class="idoor" d="' + d + '"/>'; }).join('') + halos + over + outT + lamps + timers + '</svg>';
     $('planCount').textContent = lit + ' Licht an · ' + openN + ' offen';
     if (html !== planHtml) { planHtml = html; $('plan').innerHTML = html; }
   }
@@ -2001,6 +2018,7 @@
     if (connState === 'ok' && d.getSeconds() % 30 === 0) queueRender(); // „seit … min“ aktuell halten
     // Nachtlicht-Countdown sekundengenau, ohne alles neu zu zeichnen
     document.querySelectorAll('[data-until]').forEach(function (el) { var r = +el.dataset.until - Date.now(); el.textContent = (el.hasAttribute('data-short') ? '' : 'noch ') + mmss(r); });
+    document.querySelectorAll('[data-since]').forEach(function (el) { el.textContent = hmmss(Date.now() - el.dataset.since); });
     document.querySelectorAll('[data-ring]').forEach(function (el) { var p = el.dataset.ring.split('|'); el.setAttribute('stroke-dashoffset', (p[2] * (1 - Math.max(0, Math.min(1, (p[0] - Date.now()) / p[1])))).toFixed(1)); });
     setTimeout(tick, 1000 - d.getMilliseconds());
   })();
