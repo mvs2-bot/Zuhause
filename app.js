@@ -341,8 +341,18 @@
     });
     var m = { persons: [], power: [], energy: [], speed: {}, humLimit: {}, rooms: [], lights: [], contacts: [], cams: [], alarms: [], scenes: [], echos: [], climates: [], heatTpl: [], vacuums: [], todos: [], spotify: null, weather: null, fritz: [], automations: 0, autos: [], scripts: [], helpers: [], batteries: {}, lqi: {}, updates: [], backup: null, sys: {} };
 
+    var ad = [], amp = []; m.ad = { notify: {}, next: {}, dnd: {}, routines: [] }; // Alexa Devices: Durchsage, Timer/Wecker, Nicht stören, Routinen je Gerät
     Object.keys(S).forEach(function (id) {
       var s = S[id], dom = id.split('.')[0], e = reg(id), r = roomMap[areaOf(id)] || null;
+      if (e.platform === 'alexa_devices') {
+        var k = e.key + ' ' + id;
+        if (dom === 'media_player') ad.push({ s: s, room: r });
+        else if (dom === 'notify' && /announce|durchsag/i.test(k)) m.ad.notify[e.device] = id;
+        else if (dom === 'sensor' && dc(s) === 'timestamp') (m.ad.next[e.device] = m.ad.next[e.device] || []).push(s);
+        else if (dom === 'switch' && /do_not_disturb|dnd|nicht_storen/i.test(k)) m.ad.dnd[e.device] = s;
+        else if (dom === 'button' && !/restart|neustart|neu_starten/i.test(k)) m.ad.routines.push(s);
+        if (dom !== 'todo') return; // übrige Alexa-Entitäten (Echo-Temperatur, Sprach-Events) nicht in die Räume
+      }
       if (e.platform === 'systemmonitor') m.sys[id] = s;
       if (e.platform === 'fritz' && /^(sensor|binary_sensor)$/.test(dom) && visible(id)) m.fritz.push(s);
       if (dom === 'automation') { m.automations++; if (visible(id)) m.autos.push(s); }
@@ -376,7 +386,7 @@
       else if (dom === 'alarm_control_panel') m.alarms.push(s);
       else if (dom === 'climate') { var cl = { s: s, room: r }; m.climates.push(cl); if (r) r.climates.push(cl); }
       else if (dom === 'scene') { var sc = { s: s, room: r }; m.scenes.push(sc); if (r) r.scenes.push(sc); }
-      else if (dom === 'media_player' && e.platform === 'alexa_media' && !/fire\s*tv/i.test(name(s))) { var ec = { s: s, room: r }; m.echos.push(ec); if (r) r.echos.push(ec); }
+      else if (dom === 'media_player' && e.platform === 'alexa_media' && !/fire\s*tv/i.test(name(s))) amp.push({ s: s, room: r });
       else if (dom === 'event' && e.device && r) {
         // Taster (Hue Dimmer usw.): letzter Druck = jüngstes Event des Geräts
         var b = r.buttons[e.device];
@@ -384,6 +394,9 @@
       }
     });
 
+    // Echos bevorzugt aus „Alexa Devices“, sobald dort Echos mit Bereich erreichbar sind; sonst Alexa Media Player
+    m.echos = ad.some(function (x) { return x.room && !unavailable(x.s); }) ? ad : amp;
+    m.echos.forEach(function (x) { if (x.room) x.room.echos.push(x); });
     var mine = lsGet(LS_ROOMS) || [];
     var def = function (n) { var i = ROOM_ORDER.indexOf(n.toLowerCase()); return i < 0 ? 99 : i; };
     var orderOf = function (r) { var i = mine.indexOf(r.id); return i < 0 ? 1000 + def(r.name) : i; };
@@ -809,12 +822,15 @@
     if (!list.length) return;
     var playing = list.filter(function (e) { return e.s.state === 'playing'; }).length;
     $('echoCount').textContent = list.length + ' Geräte' + (playing ? ' · ' + playing + ' spielt' : '');
+    var routines = m.ad.routines.filter(function (b) { return b.state !== 'unavailable'; }); // Knöpfe stehen auf „unknown“, bis sie einmal gedrückt wurden
     $('echos').innerHTML = list.map(function (e) {
-      var a = e.s.attributes || {}, off = unavailable(e.s);
+      var a = e.s.attributes || {}, off = unavailable(e.s), nx = nextText(m, e.s), dnd = m.ad.dnd[reg(e.s.entity_id).device];
       return '<div class="row"><span class="ico">' + ic(e.room.icon) + '</span><div class="txt"><b>' + esc(e.room.name) + '</b><small>'
-        + esc(off ? 'nicht erreichbar' : e.s.state === 'playing' ? 'spielt ' + (a.media_title || '') : 'bereit') + '</small></div>'
+        + esc(off ? 'nicht erreichbar' : (e.s.state === 'playing' ? 'spielt ' + (a.media_title || '') : 'bereit') + (nx ? ' · ' + nx : '') + (dnd && dnd.state === 'on' ? ' · nicht stören' : '')) + '</small></div>'
+        + (dnd && !unavailable(dnd) ? '<button class="chip" type="button" aria-pressed="' + (dnd.state === 'on') + '" data-dnd="' + esc(dnd.entity_id) + '" aria-label="Nicht stören ' + esc(e.room.name) + '" title="Nicht stören">' + ic('moon') + '</button>' : '')
         + (off ? '' : volStepper(e.s.entity_id, a)) + '</div>';
-    }).join('');
+    }).join('')
+      + (routines.length ? '<div class="noclim plh">Alexa-Routinen</div><div class="chips">' + routines.map(function (b) { return '<button class="chip" type="button" data-press="' + esc(b.entity_id) + '">' + esc(name(b)) + '</button>'; }).join('') + '</div>' : '');
   }
   // − Wert + ; der Wert steht sofort da, gesendet wird erst nach kurzer Pause (Alexa meldet ihn erst nach ~2 s zurück)
   function volStepper(id, a) {
@@ -822,6 +838,17 @@
     return '<span class="stepper"><button type="button" data-vol="-5" data-vid="' + esc(id) + '" aria-label="leiser">−</button><output aria-live="polite">' + (v == null ? '–' : v + ' %') + '</output><button type="button" data-vol="5" data-vid="' + esc(id) + '" aria-label="lauter">+</button></span>';
   }
   function isGroup(s) { return /^x\d|gruppe|überall|ueberall|\+/i.test(name(s)) || (s.attributes && s.attributes.member_ids); }
+  // Alexa Devices kennt kein Play/Pause/Weiter: dann als Sprachbefehl an den Echo, wie „Alexa, Pause“
+  function isAD(s) { return reg(s.entity_id).platform === 'alexa_devices'; }
+  function alexaSay(s, text) { return callService('alexa_devices', 'send_text_command', { device_id: reg(s.entity_id).device, text_command: text }); }
+  var AD_CMD = { media_play: 'weiter', media_pause: 'pause', media_next_track: 'nächster Titel', media_previous_track: 'vorheriger Titel' };
+  // Nächster Timer / Wecker / Erinnerung eines Echos (Alexa Devices)
+  function nextText(m, s) {
+    var now = Date.now();
+    return ((m.ad && m.ad.next[reg(s.entity_id).device]) || []).filter(function (x) { return Date.parse(x.state) > now; })
+      .sort(function (a, b) { return Date.parse(a.state) - Date.parse(b.state); })
+      .map(function (x) { var k = reg(x.entity_id).key + x.entity_id; return (/timer/i.test(k) ? 'Timer ' : /remind|erinner/i.test(k) ? 'Erinnerung ' : 'Wecker ') + timeText(x.state); }).join(' · ');
+  }
 
   // ---------- Musik über die Echos (Alexa Media Player), optional Spotify-Integration ----------
   function speaker(echos) {
@@ -911,7 +938,7 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-mp]'); if (!b) return;
     var m = model(), s = m.spotify || (speaker(m.echos) || {}).s; if (!s) return;
-    callService('media_player', b.dataset.mp, {}, { entity_id: s.entity_id }).catch(function () {});
+    (isAD(s) ? alexaSay(s, AD_CMD[b.dataset.mp]) : callService('media_player', b.dataset.mp, {}, { entity_id: s.entity_id })).catch(function () {});
   });
   // ---------- Spotify-Integration: eigene Playlists über media_player/browse_media ----------
   // Die Wurzel der Spotify-Mediathek enthält „Playlists“ (current_user_playlists); die ID-Form unterscheidet sich je nach HA-Version, daher suchen statt fest verdrahten.
@@ -948,7 +975,7 @@
     if (!q || !s) return;
     // Als Sprachbefehl an den Echo, genau wie „Alexa, spiele … auf Spotify“ (der Typ SPOTIFY startet bei Amazon oft nichts mehr)
     var cmd = /spotify/i.test(q) ? q : 'spiele ' + q + ' auf Spotify';
-    callService('media_player', 'play_media', { media_content_id: cmd, media_content_type: 'custom' }, { entity_id: s.s.entity_id })
+    (isAD(s.s) ? alexaSay(s.s, cmd) : callService('media_player', 'play_media', { media_content_id: cmd, media_content_type: 'custom' }, { entity_id: s.s.entity_id }))
       .then(function () { toast('Spotify startet auf ' + (s.room && !isGroup(s.s) ? s.room.name : name(s.s)) + ' …'); inp.value = ''; inp.blur(); }).catch(function () {});
   });
 
@@ -1554,6 +1581,8 @@
       }, 700);
       return;
     }
+    var dn = e.target.closest('[data-dnd]');
+    if (dn) { var dOn = dn.getAttribute('aria-pressed') === 'true'; dn.setAttribute('aria-pressed', !dOn); callService('switch', dOn ? 'turn_off' : 'turn_on', {}, { entity_id: dn.dataset.dnd }).catch(function () { queueRender(); }); return; }
     var pb = e.target.closest('[data-press]');
     if (pb) { callService('button', 'press', {}, { entity_id: pb.dataset.press }).then(function () { toast((S[pb.dataset.press] ? name(S[pb.dataset.press]) : 'Vorlage') + ' angewendet.'); }).catch(function () {}); return; }
     var mb = e.target.closest('[data-hvac]');
@@ -1623,7 +1652,8 @@
     var sh = e.target.closest('[data-show]');
     if (sh) {
       // Blink-Skill kennt die Kameras unter ihrem Blink-App-Namen (= ursprünglicher HA-Gerätename)
-      callService('media_player', 'play_media', { media_content_type: 'custom', media_content_id: 'zeige ' + sh.dataset.show }, { entity_id: sh.dataset.echo })
+      var es = S[sh.dataset.echo];
+      (es && isAD(es) ? alexaSay(es, 'zeige ' + sh.dataset.show) : callService('media_player', 'play_media', { media_content_type: 'custom', media_content_id: 'zeige ' + sh.dataset.show }, { entity_id: sh.dataset.echo }))
         .then(function () { toast('Bild kommt auf den Echo Show in der Küche …'); }).catch(function () {});
       return;
     }
@@ -1771,7 +1801,9 @@
     if (!txt) { toast('Schreib erst, was die Echos sagen sollen.'); inp.focus(); return; }
     var sel = $('sayTarget').value || 'alle';
     var target = sel === 'alle' ? model().echos.filter(function (x) { return x.room && !isGroup(x.s) && !unavailable(x.s); }).map(function (x) { return x.s.entity_id; }) : [sel];
-    callService('notify', 'alexa_media', { message: txt, target: target, data: { type: 'announce' } })
+    var m = model(), nt = target.map(function (id) { return m.ad.notify[reg(id).device]; }).filter(Boolean);
+    (S[target[0]] && isAD(S[target[0]]) && nt.length ? callService('notify', 'send_message', { message: txt }, { entity_id: nt })
+      : callService('notify', 'alexa_media', { message: txt, target: target, data: { type: 'announce' } }))
       .then(function () { toast('Durchsage gesendet.'); inp.value = ''; }).catch(function () {});
   });
 
