@@ -102,8 +102,15 @@
   add('switch.rechner', 'on', { friendly_name: 'Rechner' }, 'heimburo', { dev: pc });
   add('sensor.rechner_leistung', 64, { friendly_name: 'Rechner Leistung', device_class: 'power', unit_of_measurement: 'W' }, 'heimburo', { dev: pc });
   add('sensor.rechner_energie', 96.8, { friendly_name: 'Rechner Energie', device_class: 'energy', unit_of_measurement: 'kWh', state_class: 'total_increasing' }, 'heimburo', { dev: pc });
-  add('media_player.echo_kuche', 'playing', { friendly_name: 'Echo Küche', volume_level: 0.3, media_title: 'Morgenshow', media_artist: 'SWR3', source: 'TuneIn' }, 'kuche', { pl: 'alexa_media' });
-  add('media_player.echo_heimgym', 'idle', { friendly_name: 'Echo Heimgym', volume_level: 0.4 }, 'heimgym', { pl: 'alexa_media' });
+  // Echos über die Integration „Alexa Devices“ (Durchsage-Entität, nächster Timer, Nicht stören, Routine)
+  var ek = dev('echo_kuche', 'Echo Küche', 'kuche'), eg = dev('echo_heimgym', 'Echo Heimgym', 'heimgym'), ax = { pl: 'alexa_devices' };
+  add('media_player.echo_kuche', 'playing', { friendly_name: 'Echo Küche', volume_level: 0.3, media_title: 'Morgenshow', media_artist: 'SWR3', source: 'TuneIn' }, null, { pl: 'alexa_devices', dev: ek });
+  add('media_player.echo_heimgym', 'idle', { friendly_name: 'Echo Heimgym', volume_level: 0.4 }, null, { pl: 'alexa_devices', dev: eg });
+  add('notify.echo_kuche_announce', 'unknown', { friendly_name: 'Echo Küche Durchsagen' }, null, { pl: 'alexa_devices', dev: ek });
+  add('notify.echo_heimgym_announce', 'unknown', { friendly_name: 'Echo Heimgym Durchsagen' }, null, { pl: 'alexa_devices', dev: eg });
+  add('sensor.echo_kuche_next_timer', new Date(NOW + 12 * MIN).toISOString(), { friendly_name: 'Echo Küche Nächster Timer', device_class: 'timestamp' }, null, { pl: 'alexa_devices', dev: ek });
+  add('switch.echo_heimgym_do_not_disturb', 'off', { friendly_name: 'Echo Heimgym Nicht stören' }, null, { pl: 'alexa_devices', dev: eg });
+  add('button.routine_guten_morgen', 'unknown', { friendly_name: 'Guten Morgen' }, null, { pl: 'alexa_devices' });
   var vac = dev('saugroboter', 'Saugroboter');
   add('vacuum.saugroboter', 'docked', { friendly_name: 'Saugroboter', battery_level: 100, fan_speed: 'Standard', fan_speed_list: ['Leise', 'Standard', 'Stark', 'Turbo'] }, null, { dev: vac });
   var SHOP = [{ uid: '1', summary: 'Milch', status: 'needs_action' }, { uid: '2', summary: 'Kaffeebohnen', status: 'needs_action' }, { uid: '3', summary: 'Spülmaschinentabs', status: 'needs_action' }, { uid: '4', summary: 'Brot', status: 'completed' }];
