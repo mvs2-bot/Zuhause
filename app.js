@@ -58,15 +58,23 @@
     box: '<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/>',
     wifi: '<path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19v.01"/>',
     x: '<path d="M6 6l12 12M18 6 6 18"/>', plus: '<path d="M12 5v14M5 12h14"/>',
-    check: '<path d="m5 12 5 5 9-10"/>'
+    check: '<path d="m5 12 5 5 9-10"/>',
+    cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/>',
+    cloudsun: '<path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M19.07 4.93l-1.41 1.41"/><path d="M15.95 12.65a4 4 0 0 0-5.93-4.13"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6z"/>',
+    rain: '<path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24"/><path d="M16 14v6M8 14v6M12 16v6"/>',
+    snow: '<path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24"/><path d="M8 15h.01M8 19h.01M12 17h.01M12 21h.01M16 15h.01M16 19h.01"/>',
+    storm: '<path d="M6 16.33A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.97"/><path d="m13 12-3 5h4l-3 5"/>',
+    fog: '<path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24"/><path d="M16 17H7M17 21H9"/>',
+    wind: '<path d="M12.8 19.6A2 2 0 1 0 14 16H2"/><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/><path d="M9.8 4.4A2 2 0 1 1 11 8H2"/>',
+    alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4M12 17h.01"/>'
   };
   function ic(n, cls) { return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || ICONS.sparkle) + '</svg>'; }
-  var SVC_ICON = { homeassistant: '🏠', hue: '💡', zha: '📡', blink: '📷', alexa_media: '🔵', google_drive: '☁️', backup: '💾', tailscale: '🔐',
-    adguard: '🛡️', matter: '🧩', thread: '🧵', systemmonitor: '📊', met: '🌦️', sun: '☀️', shopping_list: '🛒', radio_browser: '📻', mobile_app: '📱',
-    google_translate: '🗣️', hassio: '🧰', go2rtc: '🎥', backup_google_drive: '☁️' };
-  var WEATHER = { 'clear-night': ['🌙', 'Klar'], cloudy: ['☁️', 'Bewölkt'], fog: ['🌫️', 'Nebel'], hail: ['🌨️', 'Hagel'], lightning: ['🌩️', 'Gewitter'],
-    'lightning-rainy': ['⛈️', 'Gewitter mit Regen'], partlycloudy: ['⛅', 'Teils bewölkt'], pouring: ['🌧️', 'Starkregen'], rainy: ['🌦️', 'Regen'],
-    snowy: ['❄️', 'Schnee'], 'snowy-rainy': ['🌨️', 'Schneeregen'], sunny: ['☀️', 'Sonnig'], windy: ['💨', 'Windig'], 'windy-variant': ['💨', 'Windig, bewölkt'], exceptional: ['⚠️', 'Unwetter'] };
+  var SVC_ICON = { homeassistant: 'home', hue: 'bulb', zha: 'wifi', blink: 'camera', alexa_media: 'speaker', google_drive: 'cloud', backup: 'box', tailscale: 'lock',
+    adguard: 'shield', matter: 'box', thread: 'wifi', systemmonitor: 'gauge', met: 'cloudsun', sun: 'sun', shopping_list: 'cart', radio_browser: 'music', mobile_app: 'remote',
+    google_translate: 'megaphone', hassio: 'gear', go2rtc: 'film', backup_google_drive: 'cloud' };
+  var WEATHER = { 'clear-night': ['moon', 'Klar'], cloudy: ['cloud', 'Bewölkt'], fog: ['fog', 'Nebel'], hail: ['snow', 'Hagel'], lightning: ['storm', 'Gewitter'],
+    'lightning-rainy': ['storm', 'Gewitter mit Regen'], partlycloudy: ['cloudsun', 'Teils bewölkt'], pouring: ['rain', 'Starkregen'], rainy: ['rain', 'Regen'],
+    snowy: ['snow', 'Schnee'], 'snowy-rainy': ['snow', 'Schneeregen'], sunny: ['sun', 'Sonnig'], windy: ['wind', 'Windig'], 'windy-variant': ['wind', 'Windig, bewölkt'], exceptional: ['alert', 'Unwetter'] };
   var VAC = { cleaning: 'Saugt', docked: 'In der Station', returning: 'Fährt zur Station', paused: 'Pausiert', idle: 'Bereit', error: 'Fehler' };
   var HVAC = { off: 'Aus', heat: 'Heizen', auto: 'Auto', heat_cool: 'Auto', cool: 'Kühlen', dry: 'Trocknen', fan_only: 'Lüfter' };
   // Zeiträume für Verläufe: Langzeitstatistik von HA (5-Minuten-, Stunden-, Tageswerte)
@@ -636,7 +644,7 @@
   // Stoppuhr am offenen Fenster/Tür: waagrecht außen vor der Wand, wenn im Bild Platz ist, sonst innen; senkrecht innen
   function planOpenFor(s, x1, y1, x2, y2, at) {
     var x = (x1 + x2) / 2, y = (y1 + y2) / 2, v = PLAN_VIEW.split(' ').map(Number), up = y1 < at[1];
-    if (y1 === y2) { var o = y + (up ? -22 : 40); y = o > v[1] + 26 && o < v[1] + v[3] - 4 ? o : y + (up ? 44 : -26); } else { x += x1 < at[0] ? 52 : -52; y += 8; }
+    if (y1 === y2) { var o = y + (up ? -22 : 40); y = o > v[1] + 26 && o < v[1] + v[3] - 4 ? o : y + (up ? 44 : -26); } else { x += x1 < at[0] ? 56 : -56; var lo = Math.min(y1, y2), hi = Math.max(y1, y2); y = at[1] < y ? hi + 34 : lo - 14; }
     var t0 = Date.parse(s.last_changed);
     return '<text class="otime" x="' + x + '" y="' + y + '" data-since="' + t0 + '">' + hmmss(Date.now() - t0) + '</text>';
   }
@@ -1436,16 +1444,16 @@
     $('weatherBox').hidden = !w;
     if (!w) return;
     if (weatherSubbed !== ws) subscribeWeather();
-    var a = w.attributes || {}, c = WEATHER[w.state] || ['🌡️', w.state];
+    var a = w.attributes || {}, c = WEATHER[w.state] || ['thermo', w.state];
     var today = forecast[0];
     var r = function (v) { return v == null ? '–' : Math.round(v); };
-    var html = '<div class="wnow"><span class="wi" aria-hidden="true">' + c[0] + '</span><span class="wt">' + r(a.temperature) + '°</span><div class="wd"><b>' + esc(c[1]) + '</b><small>'
+    var html = '<div class="wnow"><span class="wi" aria-hidden="true">' + ic(c[0]) + '</span><span class="wt">' + r(a.temperature) + '°</span><div class="wd"><b>' + esc(c[1]) + '</b><small>'
       + (today ? 'heute ' + r(today.templow) + '° bis ' + r(today.temperature) + '°' + (today.precipitation ? ' · ' + fmt1(today.precipitation) + ' mm' : '') + ' · ' : '')
-      + (a.humidity != null ? '💧 ' + r(a.humidity) + ' %' : '') + (a.wind_speed != null ? ' · 💨 ' + r(a.wind_speed) + ' ' + esc(a.wind_speed_unit || 'km/h') : '') + '</small></div></div>';
+      + (a.humidity != null ? ic('drop') + r(a.humidity) + ' %' : '') + (a.wind_speed != null ? ' · ' + ic('wind') + r(a.wind_speed) + ' ' + esc(a.wind_speed_unit || 'km/h') : '') + '</small></div></div>';
     var days = forecast.slice(1, 6);
     if (days.length) html += '<div class="wdays">' + days.map(function (d) {
-      var dc = WEATHER[d.condition] || ['🌡️', ''];
-      return '<div class="wday" title="' + esc(dc[1]) + '"><span>' + new Date(d.datetime).toLocaleDateString('de-DE', { weekday: 'short' }) + '</span><i aria-hidden="true">' + dc[0] + '</i><b>' + r(d.temperature) + '°</b> <small>' + r(d.templow) + '°</small>'
+      var dc = WEATHER[d.condition] || ['thermo', ''];
+      return '<div class="wday" title="' + esc(dc[1]) + '"><span>' + new Date(d.datetime).toLocaleDateString('de-DE', { weekday: 'short' }) + '</span><i aria-hidden="true">' + ic(dc[0]) + '</i><b>' + r(d.temperature) + '°</b> <small>' + r(d.templow) + '°</small>'
         + (d.precipitation ? '<em>' + fmt1(d.precipitation) + ' mm</em>' : '') + '</div>';
     }).join('') + '</div>';
     $('weather').innerHTML = html;
@@ -1753,7 +1761,7 @@
     $('svcCount').textContent = list.length ? (bad ? bad + ' mit Problem' : 'alles ok') : '';
     $('services').innerHTML = list.map(function (e) {
       var ok = e.state === 'loaded';
-      return '<div class="row"><span class="ico">' + (SVC_ICON[e.domain] || '🔧') + '</span><div class="txt"><b>' + esc(e.title) + '</b><small>' + esc(e.domain) + '</small></div>'
+      return '<div class="row"><span class="ico">' + ic(SVC_ICON[e.domain] || 'gear') + '</span><div class="txt"><b>' + esc(e.title) + '</b><small>' + esc(e.domain) + '</small></div>'
         + '<span class="pill ' + (ok ? 'ok' : 'open') + '">' + (ok ? 'läuft' : e.state === 'setup_retry' ? 'versucht neu' : 'Fehler') + '</span></div>';
     }).join('') || '<div class="empty">Keine Daten (Token braucht Admin-Rechte).</div>';
 

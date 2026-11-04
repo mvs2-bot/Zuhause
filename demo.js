@@ -266,7 +266,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     var b = document.createElement('div');
     b.textContent = 'Demo: Beispieldaten für die Wohnung im EG. Alles lässt sich antippen, nichts ist echt.';
-    b.style.cssText = 'position:sticky;top:0;z-index:50;padding:6px 12px;font:500 12px/1.4 var(--font,system-ui);text-align:center;background:var(--p1,#f59e0b);color:#1c1c1e';
+    b.style.cssText = 'position:sticky;top:0;z-index:50;padding:6px 12px;font:500 12px/1.4 var(--font,system-ui);text-align:center;background:var(--well,#f3f3f1);color:var(--mute,#6c6c70);border-bottom:1px solid var(--sep)';
     document.body.insertBefore(b, document.body.firstChild);
     var w = document.querySelector('#weatherBox h2'), l = document.querySelector('#weatherBox a.ext');
     if (w) w.textContent = 'Wetter Moers';
