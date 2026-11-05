@@ -73,10 +73,10 @@
   #auto { display: flex; flex-direction: column; gap: 16px; }
 
   /* Kopf: klein, ruhig, Systemmaterial beim Scrollen */
-  header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; padding-block: 16px 8px; margin-inline: -4px; padding-inline: 4px;
+  header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; padding-block: 8px; margin-inline: -4px; padding-inline: 4px;
     background: var(--bg); box-shadow: 0 1px 0 var(--sep);
-    display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-  h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); line-height: 1.15; }
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); line-height: 1.15; }
   .sub { font-size: 12px; font-weight: 500; color: var(--mute); font-variant-numeric: tabular-nums; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: center; }
   .conn { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: var(--warn); }
   .conn::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
@@ -86,8 +86,10 @@
   .conn.ok.pulse::before { animation: pulse .9s ease-out; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 currentColor; transform: scale(1.35); } 100% { box-shadow: 0 0 0 7px transparent; transform: scale(1); } }
 
-  /* Bewohner: dezent, ganz oben */
-  .residents { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -4px; }
+  /* Bewohner: dezent rechts in der Kopfzeile */
+  .residents { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 8px; min-width: 0; }
+  .residents:empty { display: none; }
+  @media (max-width: 420px) { .who .where { display: none; } .who { padding-right: 10px; } }
   .who { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--mute); background: var(--card); border-radius: 999px; padding: 4px 12px 4px 4px; box-shadow: var(--shadow); }
   .who .av { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: #fff; background: #8e8e93; }
   .who.home .av { background: var(--ok); }
@@ -106,7 +108,7 @@
   .empty { font-size: 13px; color: var(--mute); }
 
   /* Lage-Banner */
-  .status { display: flex; align-items: center; gap: 12px; border-radius: var(--radius); padding: 12px 16px; background: var(--card); box-shadow: var(--shadow); min-width: 0; }
+  .status { display: flex; align-items: center; gap: 12px; border-radius: var(--radius); padding: 8px 12px; min-height: 48px; background: var(--card); box-shadow: var(--shadow); min-width: 0; }
   .status .big { color: var(--ok); display: inline-flex; }
   .status > div { min-width: 0; flex: 1; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 4px; }
   .status b { color: var(--ink); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
@@ -122,15 +124,20 @@
 
   /* Übersichtskästen mit Symbol */
   .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-  .stat { display: flex; flex-direction: column; gap: 8px; text-align: left; background: var(--card); border: 0; border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); min-width: 0; }
+  .stat { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: center; column-gap: 6px; row-gap: 4px; text-align: left; background: var(--card); border: 0; border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); min-width: 0; }
   .stat .si { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; }
   .stat .si .ic { width: 17px; height: 17px; }
   .stat .si { background: var(--well); color: var(--mute); }
+  /* Handy: Zahl oben, darunter kleines Symbol neben der Beschriftung (spart Höhe) */
+  .stat b { grid-column: 1 / -1; }
+  .stat .si { grid-row: 2; width: 16px; height: 16px; background: none; border-radius: 0; }
+  .stat .si .ic { width: 16px; height: 16px; }
+  .stat span.l:not(.si) { grid-row: 2; }
   .stat b { display: block; font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .stat b small { font-size: 13px; font-weight: 500; color: var(--mute); margin-left: 4px; }
   .stat span.l { font-size: 12px; font-weight: 500; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stat:hover { background: var(--hover); }
-  .stat.warn .si { background: var(--danger-soft); color: var(--danger); }
+  .stat.warn .si { color: var(--danger); }
   .stat.warn b { color: var(--danger); }
 
   /* Grundriss */
@@ -596,7 +603,7 @@
   .acc-h[aria-expanded="false"] .chev { transform: rotate(-90deg); }
   .acc-b { padding: 0 12px 12px; }
 
-  @media (min-width: 820px) { .stat { display: grid; grid-template-columns: 32px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 12px; row-gap: 0; align-items: center; padding: 12px 16px; } .stat .si { grid-row: 1 / 3; width: 32px; height: 32px; } }
+  @media (min-width: 820px) { .stat { grid-template-columns: 32px minmax(0, 1fr); column-gap: 12px; row-gap: 0; padding: 12px 16px; } .stat .si { grid-row: 1 / 3; width: 32px; height: 32px; border-radius: 8px; background: var(--well); } .stat .si .ic { width: 17px; height: 17px; } .stat.warn .si { background: var(--danger-soft); } .stat b { grid-column: 2; grid-row: 1; } .stat span.l:not(.si) { grid-column: 2; grid-row: 2; } }
   @media (max-width: 380px) { .stat { padding: 8px; } .stat b { font-size: 17px; } .stat b small { display: block; margin: 2px 0 0; } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
   @media (prefers-reduced-transparency: reduce) { header, .nav { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; } header { background: var(--bg); } }
@@ -609,6 +616,7 @@
       <h1>Zuhause</h1>
       <div class="sub"><span id="clock"></span><span class="conn" id="conn">nicht verbunden</span></div>
     </div>
+    <div class="residents" id="residents" aria-label="Bewohner"></div>
   </header>
 
   <!-- Erster Start: Verbindung einrichten -->
@@ -625,7 +633,6 @@
 
   <!-- Übersicht -->
   <section id="view-uebersicht" class="view">
-    <div class="residents" id="residents" aria-label="Bewohner"></div>
     <div class="status" id="status"></div>
 
     <div class="stats" aria-label="Übersicht">
@@ -876,7 +883,7 @@
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>if (/[?&]demo\b/.test(location.search)) document.write('<script src="demo.js"><\/script>');</script>
-<script src="app.js?v=30"></script>
+<script src="app.js?v=31"></script>
 <script src="shared/ios-nav.js" data-bottom="68" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });

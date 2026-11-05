@@ -532,12 +532,13 @@
     $('sOpenL').textContent = open.length ? 'offen' : m.contacts.length ? 'alles zu' : 'Fenster';
     $('sOpenBox').classList.toggle('warn', open.length > 0);
 
-    // Bewohner: Personen aus HA, klein und dezent
+    // Bewohner: Personen aus HA, klein und dezent rechts in der Kopfzeile
     $('residents').innerHTML = m.persons.map(function (p) {
       var home = p.state === 'home', n = name(p);
       var where = home ? 'zu Hause' : p.state === 'not_home' ? 'unterwegs' : unavailable(p) ? 'unbekannt' : p.state;
-      return '<span class="who' + (home ? ' home' : '') + '"><span class="av" aria-hidden="true">' + esc(n.charAt(0).toUpperCase()) + '</span><span><b>' + esc(n) + '</b> · ' + esc(where)
-        + (!home && p.last_changed && !unavailable(p) ? ' seit ' + esc(timeText(p.last_changed)) : '') + '</span></span>';
+      var full = where + (!home && p.last_changed && !unavailable(p) ? ' seit ' + timeText(p.last_changed) : '');
+      // In der Kopfzeile: auf schmalen Handys nur Punkt und Name (grün = zu Hause), der Rest steht im Tooltip
+      return '<span class="who' + (home ? ' home' : '') + '" title="' + esc(n + ': ' + full) + '"><span class="av" aria-hidden="true">' + esc(n.charAt(0).toUpperCase()) + '</span><span><b>' + esc(n) + '</b><span class="where"> · ' + esc(full) + '</span></span></span>';
     }).join('');
 
     var st = $('status');
