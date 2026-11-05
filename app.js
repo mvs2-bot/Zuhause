@@ -536,9 +536,10 @@
     $('residents').innerHTML = m.persons.map(function (p) {
       var home = p.state === 'home', n = name(p);
       var where = home ? 'zu Hause' : p.state === 'not_home' ? 'unterwegs' : unavailable(p) ? 'unbekannt' : p.state;
-      var full = where + (!home && p.last_changed && !unavailable(p) ? ' seit ' + timeText(p.last_changed) : '');
-      // In der Kopfzeile: auf schmalen Handys nur Punkt und Name (grün = zu Hause), der Rest steht im Tooltip
-      return '<span class="who' + (home ? ' home' : '') + '" title="' + esc(n + ': ' + full) + '"><span class="av" aria-hidden="true">' + esc(n.charAt(0).toUpperCase()) + '</span><span><b>' + esc(n) + '</b><span class="where"> · ' + esc(full) + '</span></span></span>';
+      var since = !home && p.last_changed && !unavailable(p) ? 'seit ' + timeText(p.last_changed) : '';
+      // In der Kopfzeile: Punkt (grün = zu Hause) und Name, bei Abwesenheit klein darunter „unterwegs seit …“ (Handy: nur „seit …“)
+      return '<span class="who' + (home ? ' home' : '') + (since ? ' away' : '') + '" title="' + esc(n + ': ' + where + (since ? ' ' + since : '')) + '"><span class="av" aria-hidden="true">' + esc(n.charAt(0).toUpperCase()) + '</span><span class="wt"><b>' + esc(n) + '</b>'
+        + (since ? '<small><span class="where">' + esc(where) + ' </span>' + esc(since) + '</small>' : '<span class="where"> · ' + esc(where) + '</span>') + '</span></span>';
     }).join('');
 
     var st = $('status');
@@ -1870,10 +1871,15 @@
   });
   $('roomReset').addEventListener('click', function () { lsSet(LS_ROOMS, null); _model = null; renderRoomDlg(); queueRender(); });
 
-  // Navigation sortieren (nur auf diesem Gerät); neue Bereiche landen hinten
-  var rail = $('rail'), railDefault = Array.prototype.map.call(rail.children, function (b) { return b.dataset.go; });
-  function railIds() { return Array.prototype.map.call(rail.children, function (b) { return b.dataset.go; }); }
-  function applyRail(ids) { ids.forEach(function (k) { var b = rail.querySelector('[data-go="' + k + '"]'); if (b) rail.appendChild(b); }); }
+  // Navigation sortieren (nur auf diesem Gerät); neue Bereiche landen hinten.
+  // Übersicht ist die feste Startseite: immer erstes Kind der Leiste (in der Tab-Leiste per CSS in der Mitte) und nicht sortierbar.
+  var rail = $('rail'), homeBtn = rail.querySelector('[data-go="uebersicht"]');
+  function railIds() { return Array.prototype.map.call(rail.children, function (b) { return b.dataset.go; }).filter(function (k) { return k !== 'uebersicht'; }); }
+  var railDefault = railIds();
+  function applyRail(ids) {
+    ids.forEach(function (k) { var b = k !== 'uebersicht' && rail.querySelector('[data-go="' + k + '"]'); if (b) rail.appendChild(b); });
+    rail.insertBefore(homeBtn, rail.firstChild);
+  }
   function renderRailDlg() {
     $('railOrder').innerHTML = orderRows(railIds(), function (id) { return rail.querySelector('[data-go="' + id + '"]').childNodes[1].textContent; });
   }
@@ -1884,12 +1890,12 @@
   });
   $('railOrder').addEventListener('click', function (e) {
     var b = e.target.closest('[data-mv]'); if (!b) return;
-    var ids = move(railIds(), +b.dataset.i, +b.dataset.mv);
+    var ids = move(railIds(), +b.dataset.i, +b.dataset.mv); // ohne Übersicht
     applyRail(ids); lsSet(LS_RAIL, ids); renderRailDlg();
   });
   $('railReset').addEventListener('click', function () { applyRail(railDefault); lsSet(LS_RAIL, null); renderRailDlg(); });
 
-  // „Mehr“ in der Tab-Leiste (Handy): alles nach den ersten vier Bereichen als Blatt von unten.
+  // „Mehr“ in der Tab-Leiste (Handy): alles nach Übersicht und den ersten drei Bereichen als Blatt von unten.
   // „Mehr“ ist markiert, wenn einer dieser Bereiche offen ist, und bekommt einen Punkt, wenn einer davon einen Hinweis hat.
   var moreBtn = $('navMore'), moreDlg = $('moreDlg');
   function moreTabs() { return Array.prototype.slice.call(rail.children, 4); }
@@ -2088,7 +2094,7 @@
     setTimeout(tick, 1000 - d.getMilliseconds());
   })();
 
-  var start = (location.hash || '').slice(1) || 'uebersicht';
+  var start = 'uebersicht'; // App startet immer auf der Übersicht, auch nach dem Neuladen einer anderen Seite
   try { history.replaceState({ v: start, d: 0 }, '', '#' + start); } catch (e) {}
   show(start);
   connect();

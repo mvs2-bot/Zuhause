@@ -95,6 +95,9 @@
   .who.home .av { background: var(--ok); }
   :root[data-theme="dark"] .who.home .av { color: #00210b; }
   .who b { font-weight: 500; color: var(--ink); }
+  .who .wt { display: flex; flex-direction: column; line-height: 1.2; }
+  .who.away { padding-block: 4px; border-radius: 16px; }
+  .who small { font-size: 11px; font-weight: 400; color: var(--mute); font-variant-numeric: tabular-nums; }
 
   /* Karten */
   .box { background: var(--card); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); min-width: 0; }
@@ -389,6 +392,13 @@
     background: var(--card); border-top: 1px solid var(--sep); }
   .rail { display: contents; }
   .rail > button:nth-child(n+5) { display: none; }
+  /* Übersicht = Start: immer in der Mitte, als einzige Taste gefüllt */
+  @media (max-width: 979px) {
+    .rail > :nth-child(2) { order: 1; } .rail > :nth-child(3) { order: 2; } .rail > [data-go="uebersicht"] { order: 3; } .rail > :nth-child(4) { order: 4; } .nav .more { order: 5; }
+    .rail > [data-go="uebersicht"] { color: var(--ink); }
+    .rail > [data-go="uebersicht"] .ind, .rail > [data-go="uebersicht"]:hover .ind { width: 56px; background: var(--p1); color: var(--on-p1); }
+    .rail > [data-go="uebersicht"][aria-current="page"] .ind { background: var(--p1); color: var(--on-p1); box-shadow: 0 0 0 3px var(--p1-soft); }
+  }
   .nav button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; min-height: 52px; padding: 4px 0; border: 0; background: none;
     font-size: 11px; font-weight: 500; line-height: 1.15; color: var(--mute); position: relative; }
   .nav .ind { width: 48px; height: 28px; border-radius: 14px; display: grid; place-items: center; transition: background-color .2s; }
@@ -752,7 +762,7 @@
         <div class="seg" id="themeSeg" role="group" aria-label="Erscheinungsbild"><button type="button" data-theme-v="auto">Automatisch</button><button type="button" data-theme-v="light">Hell</button><button type="button" data-theme-v="dark">Dunkel</button></div></div>
       <div class="setrow"><div><b>Übersicht anordnen</b><small>Reihenfolge der Kästen auf der Startseite</small></div><button class="btn ghost small" type="button" data-arrange>Anordnen</button></div>
       <div class="setrow"><div><b>Räume sortieren</b><small>Gilt für Räume, Licht und Klima</small></div><button class="btn ghost small" type="button" data-roomorder>Sortieren</button></div>
-      <div class="setrow"><div><b>Navigation sortieren</b><small>Die ersten vier stehen unten in der Leiste, der Rest unter „Mehr“</small></div><button class="btn ghost small" type="button" data-railorder>Sortieren</button></div>
+      <div class="setrow"><div><b>Navigation sortieren</b><small>Übersicht steht fest in der Mitte, die ersten drei daneben, der Rest unter „Mehr“</small></div><button class="btn ghost small" type="button" data-railorder>Sortieren</button></div>
     </section>
 
     <section class="box" data-fold="speed" id="speedBox">
@@ -883,7 +893,7 @@
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>if (/[?&]demo\b/.test(location.search)) document.write('<script src="demo.js"><\/script>');</script>
-<script src="app.js?v=31"></script>
+<script src="app.js?v=32"></script>
 <script src="shared/ios-nav.js" data-bottom="68" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
