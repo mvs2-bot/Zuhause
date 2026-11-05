@@ -1,13 +1,13 @@
 # 🏡 Zuhause
 
-Eigenes Smart-Home-Dashboard als PWA für Home Assistant auf dem Raspberry Pi 4. Apple-Designsprache, Akzent Bernstein.
+Eigenes Smart-Home-Dashboard als PWA für Home Assistant auf dem Raspberry Pi 4. Apple-Designsprache, Akzent Dunkelgrün.
 
 **App:** https://mvs2-bot.github.io/Zuhause/
 
 ## Was die App kann
 
 - **Design:** Apple-Designsprache (Systemschrift SF Pro bzw. Roboto, kleine bis mittlere Schriftgrößen, gruppierte Karten, Linien-Symbole statt Emojis), hell/dunkel automatisch oder fest in den Einstellungen.
-- **Navigation:** Navigation Rail am rechten Rand mit Übersicht, Räume, Licht, Klima, Heizung, Medien, Energie, Kameras, Sauger, Abläufe (Automationen) und Einstellungen. Jede Seite hat einen eigenen Verlaufseintrag, die Zurück-Taste des Handys geht also eine Seite zurück.
+- **Navigation:** auf dem Handy eine Tab-Leiste unten mit den ersten vier Bereichen und „Mehr“ für den Rest (Heizung, Medien, Energie, Kameras, Sauger, Einkauf, Abläufe, Einstellungen), ab 980 px Breite eine Seitenleiste links mit allen Bereichen. Die Reihenfolge lässt sich in den Einstellungen ändern, die ersten vier landen in der Tab-Leiste. Jede Seite hat einen eigenen Verlaufseintrag, die Zurück-Taste des Handys geht also eine Seite zurück.
 - **Übersicht:** Bewohnerstatus (person.*), Lage-Banner, drei Kästen mit Symbol (Licht, Klima, Fenster), **interaktiver Grundriss** der Wohnung (Lampen, Fenster, Türen live; Lampe tippen schaltet, lange drücken öffnet Helligkeit/Farbe, Raum tippen öffnet den Raum), Wetter, Hinweise. Feuchte-Hinweise nutzen dieselben Grenzwerte wie die Automation „Lüften“ (`input_number.luftfeuchte_grenze_<raum>`).
 - **Licht:** alle Lampen nach Raum, Lieblingsszenen (früher auf der Startseite).
 - **Klima:** alle Räume mit Temperatur und Feuchte, Verläufe aufklappbar.

@@ -59,6 +59,7 @@
     wifi: '<path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19v.01"/>',
     x: '<path d="M6 6l12 12M18 6 6 18"/>', plus: '<path d="M12 5v14M5 12h14"/>',
     check: '<path d="m5 12 5 5 9-10"/>',
+    more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
     cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/>',
     cloudsun: '<path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M19.07 4.93l-1.41 1.41"/><path d="M15.95 12.65a4 4 0 0 0-5.93-4.13"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6z"/>',
     rain: '<path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24"/><path d="M16 14v6M8 14v6M12 16v6"/>',
@@ -1868,7 +1869,7 @@
   });
   $('roomReset').addEventListener('click', function () { lsSet(LS_ROOMS, null); _model = null; renderRoomDlg(); queueRender(); });
 
-  // Navigation Rail sortieren (nur auf diesem Gerät); neue Bereiche landen hinten
+  // Navigation sortieren (nur auf diesem Gerät); neue Bereiche landen hinten
   var rail = $('rail'), railDefault = Array.prototype.map.call(rail.children, function (b) { return b.dataset.go; });
   function railIds() { return Array.prototype.map.call(rail.children, function (b) { return b.dataset.go; }); }
   function applyRail(ids) { ids.forEach(function (k) { var b = rail.querySelector('[data-go="' + k + '"]'); if (b) rail.appendChild(b); }); }
@@ -1886,6 +1887,29 @@
     applyRail(ids); lsSet(LS_RAIL, ids); renderRailDlg();
   });
   $('railReset').addEventListener('click', function () { applyRail(railDefault); lsSet(LS_RAIL, null); renderRailDlg(); });
+
+  // „Mehr“ in der Tab-Leiste (Handy): alles nach den ersten vier Bereichen als Blatt von unten.
+  // „Mehr“ ist markiert, wenn einer dieser Bereiche offen ist, und bekommt einen Punkt, wenn einer davon einen Hinweis hat.
+  var moreBtn = $('navMore'), moreDlg = $('moreDlg');
+  function moreTabs() { return Array.prototype.slice.call(rail.children, 4); }
+  function syncMore() {
+    var hid = moreTabs();
+    if (hid.some(function (b) { return b.hasAttribute('aria-current'); })) moreBtn.setAttribute('aria-current', 'page'); else moreBtn.removeAttribute('aria-current');
+    $('moreBadge').hidden = !hid.some(function (b) { var x = b.querySelector('.badge'); return x && !x.hidden; });
+  }
+  new MutationObserver(syncMore).observe(rail, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-current', 'hidden'] });
+  syncMore();
+  moreBtn.addEventListener('click', function () {
+    var grid = $('moreGrid'); grid.innerHTML = '';
+    moreTabs().forEach(function (b) {
+      var c = b.cloneNode(true); c.removeAttribute('id');
+      Array.prototype.forEach.call(c.querySelectorAll('[id]'), function (x) { x.removeAttribute('id'); });
+      grid.appendChild(c);
+    });
+    moreDlg.showModal();
+  });
+  // Tippen auf einen Bereich oder neben das Blatt schließt es (der Bereich selbst öffnet über den Klick-Handler für [data-go])
+  moreDlg.addEventListener('click', function (e) { if (e.target === moreDlg || e.target.closest('[data-go]')) moreDlg.close(); });
 
   // ---------- Licht-Dialog ----------
   var dlgEntity = null, sendTimer = null;
@@ -1969,7 +1993,7 @@
     $('welcome').hidden = !needsConn;
     views.forEach(function (x) { $('view-' + x).hidden = x !== view || needsConn; });
     if (v === 'uebersicht' || v === 'raeume') lastView = v;
-    // Navigation Rail: aktuelle Seite markieren (Fenster gehört zur Übersicht)
+    // Navigation: aktuelle Seite markieren (Fenster gehört zur Übersicht)
     var railV = v === 'fenster' ? 'uebersicht' : v;
     document.querySelectorAll('.rail [data-go]').forEach(function (b) { if (b.dataset.go === railV) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     if (DETAIL[v]) detailKey = v;

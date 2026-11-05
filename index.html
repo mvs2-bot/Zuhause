@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Zuhause">
 <style>
-  /* Zuhause – Apple-Designsprache: Systemschrift, gruppierte Karten auf grauem Grund, Navigation Rail rechts.
-     Akzent bleibt Bernstein (Stefans Farbe für diese App); Status-Farben = Apples kontrastsichere Varianten. */
+  /* Zuhause – Apple-Designsprache: Systemschrift, gruppierte Karten auf grauem Grund, Tab-Leiste unten, am Desktop Seitenleiste links.
+     Akzent Dunkelgrün, Bernstein nur für Licht, das an ist; Status-Farben = Apples kontrastsichere Varianten. */
   :root {
     --bg: #f3f3f1; --card: #fff; --well: #f3f3f1; --hover: #e9e9e6; --line: #e2e2de; --sep: rgba(60, 60, 67, .14);
     --ink: #1c1c1e; --text: #3a3a3c; --mute: #6c6c70;
@@ -28,7 +28,7 @@
     --cool: #0062c4; --cool-soft: #e6f0fd;
     --plan-room: #fbfaf7; --plan-lit: #fff6dc; --plan-wall: #3a3a3c; --plan-out: #ecebe6;
     --radius: 16px; --radius-s: 12px; --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 14px rgba(0, 0, 0, .04);
-    --rail: 64px;
+    --navb: 56px; --navl: 0px;
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
     color-scheme: light;
   }
@@ -57,7 +57,8 @@
   html { background: var(--bg); -webkit-text-size-adjust: 100%; }
   body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.45; font-size: 14px;
     -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
-    padding: 0 calc(var(--rail) + env(safe-area-inset-right, 0px) + 16px) calc(32px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+    padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(var(--navb) + 32px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  @media (min-width: 980px) { body { padding-left: calc(var(--navl) + 32px); padding-right: 32px; } }
   body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
   ::selection { background: var(--p1-line); color: var(--ink); }
   button, input, textarea, select { font: inherit; color: inherit; }
@@ -374,26 +375,52 @@
   .orow .n { flex: 1; min-width: 0; font-weight: 500; font-size: 14px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .orow button { width: 40px; height: 40px; border-radius: 8px; border: 0; background: var(--card); font-weight: 600; color: var(--ink); }
 
-  /* Navigation Rail rechts (schwebende Funktionsebene, darum als Material) */
-  .rail { position: fixed; z-index: 30; top: 0; bottom: 0; right: 0; width: calc(var(--rail) + env(safe-area-inset-right, 0px));
-    padding: calc(env(safe-area-inset-top, 0px) + 8px) env(safe-area-inset-right, 0px) calc(env(safe-area-inset-bottom, 0px) + 8px) 0;
-    display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow-y: auto; scrollbar-width: none;
-    background: var(--card); border-left: 1px solid var(--sep); }
-  .rail::-webkit-scrollbar { display: none; }
-  .rail button { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0; min-height: 52px; border: 0; background: none;
+  /* Navigation: Tab-Leiste unten (Handy, Tablet hochkant), ab 980 px Seitenleiste links.
+     Die ersten vier Bereiche der eigenen Reihenfolge stehen in der Tab-Leiste, der Rest unter „Mehr“. */
+  .nav { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 4px max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px));
+    background: var(--card); border-top: 1px solid var(--sep); }
+  .rail { display: contents; }
+  .rail > button:nth-child(n+5) { display: none; }
+  .nav button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; min-height: 52px; padding: 4px 0; border: 0; background: none;
     font-size: 11px; font-weight: 500; line-height: 1.15; color: var(--mute); position: relative; }
-  .rail .ind { width: 40px; height: 30px; border-radius: 15px; display: grid; place-items: center; transition: background .2s; }
-  .rail .ind .ic { width: 21px; height: 21px; }
-  .rail button:hover .ind { background: var(--hover); }
-  .rail button[aria-current="page"] { color: var(--ink); font-weight: 500; }
-  .rail button[aria-current="page"] .ind { background: var(--p1-soft); color: var(--p1); }
-  .rail .badge { position: absolute; top: 3px; right: 11px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
-  .rail .badge.num { width: auto; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; top: 0; right: 6px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 600; line-height: 17px; text-align: center; }
-  @media (max-height: 700px) { .rail button { min-height: 46px; } .rail .ind { height: 26px; } }
-  @media (min-width: 980px) { :root { --rail: 72px; } .rail button { font-size: 12px; min-height: 58px; } }
+  .nav .ind { width: 48px; height: 28px; border-radius: 14px; display: grid; place-items: center; transition: background-color .2s; }
+  .nav .ind .ic { width: 22px; height: 22px; }
+  .nav button:hover .ind { background: var(--hover); }
+  .nav button[aria-current="page"] { color: var(--ink); }
+  .nav button[aria-current="page"] .ind { background: var(--p1-soft); color: var(--p1); }
+  .nav .badge, .sheet-grid .badge { position: absolute; top: 2px; left: calc(50% + 10px); width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+  .nav .badge.num, .sheet-grid .badge.num { width: auto; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; top: 0; color: #fff; font-size: 10px; font-weight: 600; line-height: 16px; text-align: center; }
+  dialog.sheet { margin: auto 0 0; width: 100%; max-width: 100%; border-radius: 16px 16px 0 0; padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); box-shadow: none; }
+  .sheet .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 16px; }
+  .sheet-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .sheet-grid button { position: relative; border: 0; background: var(--well); border-radius: 12px; padding: 12px 4px; min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    font-size: 12px; font-weight: 500; line-height: 1.2; color: var(--ink); text-align: center; hyphens: auto; -webkit-hyphens: auto; }
+  .sheet-grid .ind { display: grid; place-items: center; color: var(--text); }
+  .sheet-grid .ind .ic { width: 22px; height: 22px; }
+  .sheet-grid button:hover { background: var(--hover); }
+  .sheet-grid button[aria-current="page"] { background: var(--p1-soft); color: var(--p1); }
+  .sheet-grid button[aria-current="page"] .ind { color: var(--p1); }
+  .sheet-grid .badge { top: 8px; left: auto; right: 8px; }
+  @media (min-width: 980px) {
+    :root { --navb: 0px; --navl: 240px; }
+    .nav { top: 0; right: auto; width: calc(var(--navl) + env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
+      padding: calc(env(safe-area-inset-top, 0px) + 16px) 12px 16px max(12px, env(safe-area-inset-left, 0px)); border-top: 0; border-right: 1px solid var(--sep); }
+    .rail { display: flex; flex-direction: column; gap: 2px; }
+    .rail > button:nth-child(n+5) { display: flex; }
+    .nav .more { display: none; }
+    .nav button { flex-direction: row; gap: 12px; min-height: 40px; padding: 0 12px; border-radius: 10px; font-size: 14px; color: var(--text); text-align: left; }
+    .nav .ind { width: 20px; height: 20px; border-radius: 0; color: var(--mute); }
+    .nav .ind .ic { width: 20px; height: 20px; }
+    .nav button:hover { background: var(--hover); }
+    .nav button:hover .ind, .nav button[aria-current="page"] .ind { background: none; }
+    .nav button[aria-current="page"] { background: var(--p1-soft); color: var(--p1); }
+    .nav button[aria-current="page"] .ind { color: var(--p1); }
+    .nav .badge, .nav .badge.num { position: static; margin-left: auto; }
+  }
 
-  .toast { position: fixed; left: calc(50% - var(--rail) / 2); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40;
-    background: var(--ink); color: var(--card); font-weight: 500; font-size: 13px; border-radius: 12px; padding: 12px 16px; max-width: calc(100% - var(--rail) - 32px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+  .toast { position: fixed; left: calc(50% + var(--navl) / 2); bottom: calc(var(--navb) + 16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40;
+    background: var(--ink); color: var(--card); font-weight: 500; font-size: 13px; border-radius: 12px; padding: 12px 16px; max-width: calc(100% - var(--navl) - 32px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
   footer { text-align: center; }
   .foot { display: block; margin: 0 auto; color: var(--mute); font-weight: 500; font-size: 12px; font-variant-numeric: tabular-nums; }
   .foot:hover { color: var(--p1); }
@@ -540,9 +567,9 @@
   /* Übersicht-Board und Anordnen */
   .board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
   @media (min-width: 820px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } .board > [data-size="l"] { grid-column: 1 / -1; } }
-  .arrange-bar { position: fixed; z-index: 33; left: calc(50% - var(--rail) / 2); transform: translateX(-50%); bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  .arrange-bar { position: fixed; z-index: 33; left: calc(50% + var(--navl) / 2); transform: translateX(-50%); bottom: calc(var(--navb) + 16px + env(safe-area-inset-bottom, 0px));
     display: flex; align-items: center; gap: 12px; background: var(--ink); color: var(--card); border-radius: 14px; padding: 8px 8px 8px 14px; font-size: 13px; font-weight: 500;
-    box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100% - var(--rail) - 32px); }
+    box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100% - var(--navl) - 32px); }
   body.arrange #board > .box > :not(.box-head) { display: none !important; }
   body.arrange #board > .box { padding-block: 10px; outline: 2px dashed var(--p1-line); outline-offset: -2px; }
   body.arrange #board > .box > .box-head { margin: 0; touch-action: none; cursor: grab; }
@@ -572,7 +599,7 @@
   @media (min-width: 820px) { .stat { display: grid; grid-template-columns: 32px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 12px; row-gap: 0; align-items: center; padding: 12px 16px; } .stat .si { grid-row: 1 / 3; width: 32px; height: 32px; } }
   @media (max-width: 380px) { .stat { padding: 8px; } .stat b { font-size: 17px; } .stat b small { display: block; margin: 2px 0 0; } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
-  @media (prefers-reduced-transparency: reduce) { header, .rail { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; } header { background: var(--bg); } }
+  @media (prefers-reduced-transparency: reduce) { header, .nav { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; } header { background: var(--bg); } }
 </style>
 </head>
 <body>
@@ -718,7 +745,7 @@
         <div class="seg" id="themeSeg" role="group" aria-label="Erscheinungsbild"><button type="button" data-theme-v="auto">Automatisch</button><button type="button" data-theme-v="light">Hell</button><button type="button" data-theme-v="dark">Dunkel</button></div></div>
       <div class="setrow"><div><b>Übersicht anordnen</b><small>Reihenfolge der Kästen auf der Startseite</small></div><button class="btn ghost small" type="button" data-arrange>Anordnen</button></div>
       <div class="setrow"><div><b>Räume sortieren</b><small>Gilt für Räume, Licht und Klima</small></div><button class="btn ghost small" type="button" data-roomorder>Sortieren</button></div>
-      <div class="setrow"><div><b>Navigation sortieren</b><small>Reihenfolge der Symbole in der Leiste rechts</small></div><button class="btn ghost small" type="button" data-railorder>Sortieren</button></div>
+      <div class="setrow"><div><b>Navigation sortieren</b><small>Die ersten vier stehen unten in der Leiste, der Rest unter „Mehr“</small></div><button class="btn ghost small" type="button" data-railorder>Sortieren</button></div>
     </section>
 
     <section class="box" data-fold="speed" id="speedBox">
@@ -782,7 +809,8 @@
   </form>
 </template>
 
-<nav class="rail" id="rail" aria-label="Bereiche">
+<nav class="nav" aria-label="Bereiche">
+<div class="rail" id="rail">
   <button type="button" data-go="uebersicht"><span class="ind" data-ic="home"></span>Übersicht</button>
   <button type="button" data-go="raeume"><span class="ind" data-ic="rooms"></span>Räume</button>
   <button type="button" data-go="lichter"><span class="ind" data-ic="bulb"></span>Licht</button>
@@ -794,8 +822,12 @@
   <button type="button" data-go="sauger"><span class="ind" data-ic="vacuum"></span>Sauger</button>
   <button type="button" data-go="einkauf"><span class="ind" data-ic="cart"></span>Einkauf<span class="badge num" id="shopBadge" hidden></span></button>
   <button type="button" data-go="automationen"><span class="ind" data-ic="auto"></span>Abläufe</button>
-  <button type="button" data-go="system" id="sysBtn"><span class="ind" data-ic="gear"></span>Einstell.<span class="badge" id="sysBadge" hidden></span></button>
+  <button type="button" data-go="system" id="sysBtn"><span class="ind" data-ic="gear"></span>Einstellungen<span class="badge" id="sysBadge" hidden></span></button>
+</div>
+  <button type="button" class="more" id="navMore" aria-haspopup="dialog"><span class="ind" data-ic="more"></span>Mehr<span class="badge" id="moreBadge" hidden></span></button>
 </nav>
+
+<dialog id="moreDlg" class="sheet" aria-label="Weitere Bereiche"><div class="grab"></div><div class="sheet-grid" id="moreGrid"></div></dialog>
 
 <dialog id="lightDlg">
   <form method="dialog">
@@ -844,8 +876,8 @@
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>if (/[?&]demo\b/.test(location.search)) document.write('<script src="demo.js"><\/script>');</script>
-<script src="app.js?v=29"></script>
-<script src="shared/ios-nav.js" defer></script>
+<script src="app.js?v=30"></script>
+<script src="shared/ios-nav.js" data-bottom="68" defer></script>
 <script>
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
 </script>
